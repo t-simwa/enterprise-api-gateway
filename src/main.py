@@ -15,6 +15,7 @@ from sqlalchemy import text
 
 from src.api.health import router as health_router
 from src.config import settings
+from src.middleware.request_id import RequestIDMiddleware
 from src.database import engine
 from src.exceptions import AppException
 
@@ -55,6 +56,8 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+app.add_middleware(RequestIDMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
