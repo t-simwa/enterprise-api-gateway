@@ -13,7 +13,7 @@ from src.exceptions import ForbiddenException, UnauthorizedException
 from src.models.user import User
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncGenerator, Awaitable, Callable
 
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,8 +26,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),
-    db: AsyncSession = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> User:
     if credentials is None:
         raise UnauthorizedException("Not authenticated")
@@ -38,7 +38,7 @@ async def get_current_user(
         if user_id is None:
             raise UnauthorizedException("Invalid token payload")
     except JWTError:
-        raise UnauthorizedException("Invalid or expired token")
+        raise UnauthorizedException("Invalid or expired token") from None
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if user is None:
@@ -48,8 +48,8 @@ async def get_current_user(
     return user
 
 
-def require_roles(*roles: str):
-    async def role_checker(current_user: User = Depends(get_current_user)) -> User:
+def require_roles(*roles: str) -> Callable[..., Awaitable[User]]:
+    async def role_checker(current_user: User = Depends(get_current_user)) -> User:  # noqa: B008
         if current_user.role not in roles:
             raise ForbiddenException(f"Requires one of: {roles}")
         return current_user
@@ -66,7 +66,7 @@ async def get_current_user_ws(token: str = "") -> User:
         if user_id is None:
             raise UnauthorizedException("Invalid token payload")
     except JWTError:
-        raise UnauthorizedException("Invalid or expired token")
+        raise UnauthorizedException("Invalid or expired token") from None
     async with async_session() as db:
         result = await db.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()

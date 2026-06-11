@@ -36,3 +36,69 @@ BEGIN (implicit)
 SELECT 1
 [cached since 0.6806s ago] ()
 ROLLBACK
+select pg_catalog.version()
+[raw sql] ()
+select current_schema()
+[raw sql] ()
+show standard_conforming_strings
+[raw sql] ()
+BEGIN (implicit)
+SELECT 1
+[generated in 0.00039s] ()
+COMMIT
+BEGIN (implicit)
+SELECT 1
+[cached since 0.6836s ago] ()
+ROLLBACK
+select pg_catalog.version()
+[raw sql] ()
+select current_schema()
+[raw sql] ()
+show standard_conforming_strings
+[raw sql] ()
+BEGIN (implicit)
+SELECT 1
+[generated in 0.00058s] ()
+COMMIT
+BEGIN (implicit)
+SELECT 1
+[cached since 0.1582s ago] ()
+ROLLBACK
+BEGIN (implicit)
+SELECT 1
+[cached since 0.2714s ago] ()
+ROLLBACK
+select pg_catalog.version()
+[raw sql] ()
+select current_schema()
+[raw sql] ()
+show standard_conforming_strings
+[raw sql] ()
+BEGIN (implicit)
+SELECT 1
+[generated in 0.00065s] ()
+COMMIT
+select pg_catalog.version()
+[raw sql] ()
+select current_schema()
+[raw sql] ()
+show standard_conforming_strings
+[raw sql] ()
+BEGIN (implicit)
+SELECT 1
+[generated in 0.00057s] ()
+COMMIT
+select pg_catalog.version()
+[raw sql] ()
+select current_schema()
+[raw sql] ()
+show standard_conforming_strings
+[raw sql] ()
+BEGIN (implicit)
+SELECT 1
+[generated in 0.00042s] ()
+COMMIT
+BEGIN (implicit)
+SELECT 1
+[cached since 0.5077s ago] ()
+ROLLBACK

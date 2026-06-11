@@ -15,9 +15,9 @@ from sqlalchemy import text
 
 from src.api.health import router as health_router
 from src.config import settings
-from src.middleware.request_id import RequestIDMiddleware
 from src.database import engine
 from src.exceptions import AppException
+from src.middleware.request_id import RequestIDMiddleware
 
 logger = structlog.get_logger(__name__)
 
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
         await conn.run_sync(lambda sync_conn: sync_conn.execute(text("SELECT 1")))
     logger.info("Database connection verified")
-    r = aioredis.from_url(str(settings.REDIS_URL))
+    r = aioredis.from_url(str(settings.REDIS_URL))  # type: ignore[no-untyped-call]
     await r.ping()
     await r.aclose()
     logger.info("Redis connection verified")
@@ -87,7 +87,8 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    logger.error("Unhandled exception", exc_info=exc, request_id=getattr(request.state, "request_id", None))
+    req_id = getattr(request.state, "request_id", None)
+    logger.error("Unhandled exception", exc_info=exc, request_id=req_id)
     return JSONResponse(
         status_code=500,
         content={

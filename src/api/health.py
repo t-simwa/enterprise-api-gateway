@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import os
 import tempfile
 import time
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from redis import asyncio as aioredis
 from sqlalchemy import text
@@ -31,7 +30,7 @@ async def health_check() -> JSONResponse:
 
     redis_status = "connected"
     try:
-        r = aioredis.from_url(str(settings.REDIS_URL))
+        r = aioredis.from_url(str(settings.REDIS_URL))  # type: ignore[no-untyped-call]
         await r.ping()
         await r.aclose()
     except Exception:
@@ -62,7 +61,7 @@ async def health_check() -> JSONResponse:
 
 
 @router.get("/")
-async def root() -> dict:
+async def root() -> dict[str, str]:
     return {
         "name": "Enterprise Inventory & Order Management API",
         "version": "1.0.0",
