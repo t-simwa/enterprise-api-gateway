@@ -15,11 +15,13 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
+from src.api.admin import router as admin_router
 from src.api.auth import router as auth_router
 from src.api.health import router as health_router
 from src.api.inventory import router as inventory_router
 from src.api.orders import router as orders_router
 from src.api.products import router as products_router
+from src.api.warehouses import router as warehouses_router
 from src.config import settings
 from src.database import engine
 from src.exceptions import AppException
@@ -114,5 +116,5 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 app.include_router(products_router)
 app.include_router(inventory_router)
 app.include_router(orders_router)
-# app.include_router(admin_router, prefix="/admin", tags=["Admin"])
-# app.include_router(ws_router)
+app.include_router(warehouses_router)
+app.include_router(admin_router)
