@@ -58,6 +58,7 @@ async def create_product(
 ) -> ProductResponse:
     svc = ProductService(db)
     product = await svc.create_product(body)
+    await db.commit()
     return ProductResponse.model_validate(product)
 
 
@@ -70,6 +71,7 @@ async def update_product(
 ) -> ProductResponse:
     svc = ProductService(db)
     product = await svc.update_product(product_id, body)
+    await db.commit()
     return ProductResponse.model_validate(product)
 
 
@@ -81,3 +83,4 @@ async def delete_product(
 ) -> None:
     svc = ProductService(db)
     await svc.soft_delete_product(product_id)
+    await db.commit()

@@ -20,33 +20,6 @@ from src.services.inventory_service import InventoryService
 router = APIRouter(prefix="/api/inventory", tags=["Inventory"])
 
 
-@router.get("/{product_id}", response_model=ProductInventoryResponse)
-async def get_inventory(
-    product_id: UUID,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
-) -> ProductInventoryResponse:
-    svc = InventoryService(db)
-    data = await svc.get_inventory_by_product(product_id)
-    return ProductInventoryResponse(**data)
-
-
-@router.post("/adjust")
-async def adjust_stock(
-    body: StockAdjustRequest,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
-    current_user: User = Depends(require_roles("admin", "manager")),  # noqa: B008
-) -> dict[str, Any]:
-    svc = InventoryService(db)
-    return await svc.adjust_stock(
-        product_id=body.product_id,
-        warehouse_id=body.warehouse_id,
-        change_qty=body.change_qty,
-        reason=body.reason,
-        notes=body.notes,
-        user_id=current_user.id,
-    )
-
-
 @router.get("/low-stock", response_model=list[LowStockItem])
 async def low_stock(
     threshold: int | None = Query(None, ge=0),
@@ -55,22 +28,6 @@ async def low_stock(
     svc = InventoryService(db)
     data = await svc.get_low_stock(threshold)
     return [LowStockItem(**item) for item in data]
-
-
-@router.post("/transfer")
-async def transfer_stock(
-    body: StockTransferRequest,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
-    current_user: User = Depends(require_roles("admin", "manager")),  # noqa: B008
-) -> dict[str, Any]:
-    svc = InventoryService(db)
-    return await svc.transfer_stock(
-        product_id=body.product_id,
-        from_warehouse_id=body.from_warehouse_id,
-        to_warehouse_id=body.to_warehouse_id,
-        quantity=body.quantity,
-        user_id=current_user.id,
-    )
 
 
 @router.get("/audit-log", response_model=PaginatedResponse)
@@ -107,3 +64,50 @@ async def audit_log(
         size=size,
         pages=0,
     )
+
+
+@router.get("/{product_id}", response_model=ProductInventoryResponse)
+async def get_inventory(
+    product_id: UUID,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> ProductInventoryResponse:
+    svc = InventoryService(db)
+    data = await svc.get_inventory_by_product(product_id)
+    return ProductInventoryResponse(**data)
+
+
+@router.post("/adjust")
+async def adjust_stock(
+    body: StockAdjustRequest,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(require_roles("admin", "manager")),  # noqa: B008
+) -> dict[str, Any]:
+    svc = InventoryService(db)
+    result = await svc.adjust_stock(
+        product_id=body.product_id,
+        warehouse_id=body.warehouse_id,
+        change_qty=body.change_qty,
+        reason=body.reason,
+        notes=body.notes,
+        user_id=current_user.id,
+    )
+    await db.commit()
+    return result
+
+
+@router.post("/transfer")
+async def transfer_stock(
+    body: StockTransferRequest,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(require_roles("admin", "manager")),  # noqa: B008
+) -> dict[str, Any]:
+    svc = InventoryService(db)
+    result = await svc.transfer_stock(
+        product_id=body.product_id,
+        from_warehouse_id=body.from_warehouse_id,
+        to_warehouse_id=body.to_warehouse_id,
+        quantity=body.quantity,
+        user_id=current_user.id,
+    )
+    await db.commit()
+    return result

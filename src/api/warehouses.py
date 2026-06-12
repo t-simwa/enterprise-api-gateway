@@ -31,4 +31,5 @@ async def create_warehouse(
     db.add(wh)
     await db.flush()
     await db.refresh(wh)
+    await db.commit()
     return WarehouseResponse.model_validate(wh)

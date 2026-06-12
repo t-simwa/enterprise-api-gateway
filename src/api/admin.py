@@ -45,6 +45,7 @@ async def change_user_role(
     user.role = body.role
     await db.flush()
     await db.refresh(user)
+    await db.commit()
     return UserResponse.model_validate(user)
 
 

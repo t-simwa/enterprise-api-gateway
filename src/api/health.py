@@ -3,13 +3,14 @@ from __future__ import annotations
 import tempfile
 import time
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from redis import asyncio as aioredis
 from sqlalchemy import text
 
 from src.config import settings
 from src.database import async_session
+from src.limiter import limiter
 from src.schemas.common import HealthResponse
 
 router = APIRouter(tags=["Health"])
@@ -17,7 +18,8 @@ startup_time = time.time()
 
 
 @router.get("/health")
-async def health_check() -> JSONResponse:
+@limiter.limit("100/minute")
+async def health_check(request: Request) -> JSONResponse:
     errors: list[str] = []
 
     db_status = "connected"

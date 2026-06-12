@@ -12,6 +12,11 @@ from src.models.inventory import Inventory, InventoryTransaction
 from src.models.order import Order, OrderEvent, OrderItem
 from src.models.product import Product
 
+ORDER_LOAD_OPTS = [
+    selectinload(Order.items).selectinload(OrderItem.product),
+    selectinload(Order.events),
+]
+
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,19 +36,11 @@ class OrderService:
         self.db = db
 
     async def generate_order_number(self) -> str:
+        from uuid import uuid4
+
         year = datetime.now(tz=UTC).year
-        prefix = f"ORD-{year}-"
-        result = await self.db.execute(
-            select(Order.order_number)
-            .where(Order.order_number.like(f"{prefix}%"))
-            .order_by(Order.order_number.desc())
-            .limit(1)
-        )
-        last = result.scalar_one_or_none()
-        if last is None:
-            return f"{prefix}00001"
-        last_num = int(last.split("-")[-1])
-        return f"{prefix}{last_num + 1:05d}"
+        suffix = uuid4().hex[:8].upper()
+        return f"ORD-{year}-{suffix}"
 
     async def create_order(
         self,
@@ -176,30 +173,29 @@ class OrderService:
         for item in order.items:
             inv_result = await self.db.execute(
                 select(Inventory)
-                .where(
-                    Inventory.product_id == item.product_id,
-                )
+                .where(Inventory.product_id == item.product_id)
                 .with_for_update()
             )
-            inventory = inv_result.scalar_one_or_none()
-            if inventory:
-                inventory.quantity += item.quantity
-            else:
-                inventory = Inventory(
-                    product_id=item.product_id,
-                    quantity=item.quantity,
-                    reserved_qty=0,
-                )
-                self.db.add(inventory)
+            inventories = list(inv_result.scalars().all())
+            if not inventories:
+                raise NotFoundException("Inventory", str(item.product_id))
 
-            tx = InventoryTransaction(
-                product_id=item.product_id,
-                change_qty=item.quantity,
-                reason="return",
-                notes=f"Return from order {order.order_number}",
-                created_by=user_id,
-            )
-            self.db.add(tx)
+            remaining = item.quantity
+            for inv in inventories:
+                if remaining <= 0:
+                    break
+                add_qty = remaining
+                inv.quantity += add_qty
+                tx = InventoryTransaction(
+                    product_id=item.product_id,
+                    warehouse_id=inv.warehouse_id,
+                    change_qty=add_qty,
+                    reason="return",
+                    notes=f"Return from order {order.order_number}",
+                    created_by=user_id,
+                )
+                self.db.add(tx)
+                remaining -= add_qty
 
         old_status = order.status
         order.status = "returned"
@@ -253,10 +249,7 @@ class OrderService:
         page: int = 1,
         size: int = 20,
     ) -> tuple[list[Order], int]:
-        query = select(Order).options(
-            selectinload(Order.items),
-            selectinload(Order.events),
-        )
+        query = select(Order).options(*ORDER_LOAD_OPTS)
 
         if status is not None:
             query = query.where(Order.status == status)
@@ -284,7 +277,7 @@ class OrderService:
         pattern = f"%{query_str}%"
         query = (
             select(Order)
-            .options(selectinload(Order.items), selectinload(Order.events))
+            .options(*ORDER_LOAD_OPTS)
             .where(
                 or_(
                     Order.order_number.ilike(pattern),
@@ -313,6 +306,7 @@ class OrderService:
     async def get_order_timeline(self, order_id: UUID) -> list[OrderEvent]:
         result = await self.db.execute(
             select(OrderEvent)
+            .options(selectinload(OrderEvent.user))
             .where(OrderEvent.order_id == order_id)
             .order_by(OrderEvent.created_at.asc())
         )
@@ -419,9 +413,7 @@ class OrderService:
 
     async def _get_order_with_items(self, order_id: UUID) -> Order:
         result = await self.db.execute(
-            select(Order)
-            .options(selectinload(Order.items), selectinload(Order.events))
-            .where(Order.id == order_id)
+            select(Order).options(*ORDER_LOAD_OPTS).where(Order.id == order_id)
         )
         order = result.scalar_one_or_none()
         if order is None:

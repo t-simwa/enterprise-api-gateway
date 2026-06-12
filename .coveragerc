@@ -1,0 +1,15 @@
+[run]
+source = src
+concurrency = greenlet
+dynamic_context = test_function
+omit =
+    src/celery_app.py
+    src/seed.py
+    src/tasks/*
+    src/main.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError

@@ -66,6 +66,8 @@ async def create_order(
         items=[item.model_dump() for item in body.items],
         user_id=current_user.id,
     )
+    await db.commit()
+    order = await svc.get_order(order.id)
     return _build_order_response(order)
 
 
@@ -141,6 +143,8 @@ async def update_order_status(
         notes=body.notes,
         user_id=current_user.id,
     )
+    await db.commit()
+    order = await svc.get_order(order.id)
     return _build_order_response(order)
 
 
@@ -152,6 +156,8 @@ async def cancel_order(
 ) -> OrderResponse:
     svc = OrderService(db)
     order = await svc.cancel_order(order_id, current_user.id)
+    await db.commit()
+    order = await svc.get_order(order.id)
     return _build_order_response(order)
 
 
@@ -163,6 +169,8 @@ async def return_order(
 ) -> OrderResponse:
     svc = OrderService(db)
     order = await svc.process_return(order_id, current_user.id)
+    await db.commit()
+    order = await svc.get_order(order.id)
     return _build_order_response(order)
 
 
