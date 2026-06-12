@@ -17,6 +17,7 @@ from sqlalchemy import text
 
 from src.api.auth import router as auth_router
 from src.api.health import router as health_router
+from src.api.products import router as products_router
 from src.config import settings
 from src.database import engine
 from src.exceptions import AppException
@@ -74,7 +75,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(auth_router)
 app.include_router(health_router, prefix="", tags=["Health"])
 
 
@@ -108,8 +109,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
             "request_id": getattr(request.state, "request_id", None),
         },
     )
-# app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
-# app.include_router(products_router, prefix="/api/products", tags=["Products"])
+app.include_router(products_router)
 # app.include_router(inventory_router, prefix="/api/inventory", tags=["Inventory"])
 # app.include_router(warehouses_router, prefix="/api/warehouses", tags=["Warehouses"])
 # app.include_router(orders_router, prefix="/api/orders", tags=["Orders"])
