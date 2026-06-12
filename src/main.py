@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from redis import asyncio as aioredis
 from sqlalchemy import text
 
+from src.api.auth import router as auth_router
 from src.api.health import router as health_router
 from src.config import settings
 from src.database import engine
@@ -67,6 +68,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(health_router, prefix="", tags=["Health"])
 
 

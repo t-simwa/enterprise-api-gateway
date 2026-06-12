@@ -4,13 +4,15 @@ from typing import TYPE_CHECKING
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 from sqlalchemy import select
+
+from redis import asyncio as aioredis
 
 from src.config import settings
 from src.database import async_session
 from src.exceptions import ForbiddenException, UnauthorizedException
 from src.models.user import User
+from src.services.auth_service import AuthService
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Awaitable, Callable
@@ -25,20 +27,25 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+async def get_redis() -> aioredis.Redis:
+    r = aioredis.from_url(str(settings.REDIS_URL))  # type: ignore[no-untyped-call]
+    try:
+        yield r
+    finally:
+        await r.aclose()
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),  # noqa: B008
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> User:
     if credentials is None:
         raise UnauthorizedException("Not authenticated")
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        user_id: str | None = payload.get("sub")
-        if user_id is None:
-            raise UnauthorizedException("Invalid token payload")
-    except JWTError:
-        raise UnauthorizedException("Invalid or expired token") from None
+    svc = AuthService(db)
+    payload = svc.decode_token(credentials.credentials)
+    user_id: str | None = payload.get("sub")
+    if user_id is None:
+        raise UnauthorizedException("Invalid token payload")
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if user is None:
@@ -60,14 +67,12 @@ def require_roles(*roles: str) -> Callable[..., Awaitable[User]]:
 async def get_current_user_ws(token: str = "") -> User:
     if not token:
         raise UnauthorizedException("Missing token")
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+    async with async_session() as db:
+        svc = AuthService(db)
+        payload = svc.decode_token(token)
         user_id: str | None = payload.get("sub")
         if user_id is None:
             raise UnauthorizedException("Invalid token payload")
-    except JWTError:
-        raise UnauthorizedException("Invalid or expired token") from None
-    async with async_session() as db:
         result = await db.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()
         if user is None:
