@@ -17,6 +17,7 @@ from sqlalchemy import text
 
 from src.api.auth import router as auth_router
 from src.api.health import router as health_router
+from src.api.inventory import router as inventory_router
 from src.api.products import router as products_router
 from src.config import settings
 from src.database import engine
@@ -110,7 +111,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         },
     )
 app.include_router(products_router)
-# app.include_router(inventory_router, prefix="/api/inventory", tags=["Inventory"])
+app.include_router(inventory_router)
 # app.include_router(warehouses_router, prefix="/api/warehouses", tags=["Warehouses"])
 # app.include_router(orders_router, prefix="/api/orders", tags=["Orders"])
 # app.include_router(admin_router, prefix="/admin", tags=["Admin"])
