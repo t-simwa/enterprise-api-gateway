@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
-
 from redis import asyncio as aioredis
+from sqlalchemy import select
 
 from src.config import settings
 from src.database import async_session
@@ -27,7 +26,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-async def get_redis() -> aioredis.Redis:
+async def get_redis() -> Any:
     r = aioredis.from_url(str(settings.REDIS_URL))  # type: ignore[no-untyped-call]
     try:
         yield r

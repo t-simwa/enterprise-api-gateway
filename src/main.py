@@ -11,6 +11,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from redis import asyncio as aioredis
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
 from src.api.auth import router as auth_router
@@ -18,6 +20,7 @@ from src.api.health import router as health_router
 from src.config import settings
 from src.database import engine
 from src.exceptions import AppException
+from src.limiter import limiter
 from src.middleware.request_id import RequestIDMiddleware
 
 logger = structlog.get_logger(__name__)
@@ -57,6 +60,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 app.add_middleware(RequestIDMiddleware)
 

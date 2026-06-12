@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, Any
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -27,13 +27,13 @@ class AuthService:
         self.db = db
 
     def hash_password(self, password: str) -> str:
-        return pwd_context.hash(password)
+        return pwd_context.hash(password)  # type: ignore[no-any-return]
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
+        return pwd_context.verify(plain_password, hashed_password)  # type: ignore[no-any-return]
 
     def create_access_token(self, user_id: str, role: str) -> str:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         payload = {
             "sub": user_id,
             "role": role,
@@ -41,10 +41,10 @@ class AuthService:
             "iat": now,
             "exp": now + ACCESS_TOKEN_EXPIRE,
         }
-        return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")  # type: ignore[no-any-return]
 
     def create_refresh_token(self, user_id: str) -> str:
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         payload = {
             "sub": user_id,
             "type": "refresh",
@@ -52,14 +52,14 @@ class AuthService:
             "iat": now,
             "exp": now + REFRESH_TOKEN_EXPIRE,
         }
-        return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")  # type: ignore[no-any-return]
 
-    def decode_token(self, token: str) -> dict:
+    def decode_token(self, token: str) -> dict[str, Any]:
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-            return payload
+            return payload  # type: ignore[no-any-return]
         except JWTError:
-            raise UnauthorizedException("Invalid or expired token")
+            raise UnauthorizedException("Invalid or expired token") from None
 
     async def register_user(self, email: str, password: str, full_name: str) -> User:
         result = await self.db.execute(select(User).where(User.email == email))
@@ -113,11 +113,11 @@ class AuthService:
                 options={"verify_exp": True},
             )
         except JWTError:
-            raise UnauthorizedException("Invalid refresh token")
+            raise UnauthorizedException("Invalid refresh token") from None
         exp = payload.get("exp")
         if exp is None:
             return
-        remaining = exp - datetime.now(tz=timezone.utc).timestamp()
+        remaining = exp - datetime.now(tz=UTC).timestamp()
         if remaining <= 0:
             return
         r = aioredis.from_url(str(settings.REDIS_URL))  # type: ignore[no-untyped-call]
