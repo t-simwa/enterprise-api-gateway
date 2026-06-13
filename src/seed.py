@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
+import structlog
 from passlib.hash import bcrypt
 from sqlalchemy import select
 
@@ -9,6 +10,8 @@ from src.database import Base, async_session, engine
 from src.models.inventory import Inventory, InventoryTransaction, Warehouse
 from src.models.product import Product
 from src.models.user import User
+
+logger = structlog.get_logger(__name__)
 
 WAREHOUSES = [
     {"code": "WH-NAI-01", "name": "Nairobi Central", "location": "Nairobi, Kenya"},
@@ -55,7 +58,7 @@ async def seed_database() -> None:
     async with async_session() as session:
         existing_warehouses = (await session.execute(select(Warehouse))).scalars().all()
         if existing_warehouses:
-            print("Database already seeded, skipping...")
+            logger.info("Database already seeded, skipping...")
             return
 
         warehouse_objs: list[Warehouse] = []
@@ -111,11 +114,13 @@ async def seed_database() -> None:
         session.add_all([admin, manager])
         await session.commit()
 
-    print("Database seeded successfully!")
-    print(f"  - {len(warehouse_objs)} warehouses")
-    print(f"  - {len(product_objs)} products")
-    print(f"  - {len(warehouse_objs) * len(product_objs)} inventory records")
-    print("  - 2 users (admin@example.com, manager@example.com)")
+    logger.info(
+        "Database seeded successfully",
+        warehouses=len(warehouse_objs),
+        products=len(product_objs),
+        inventory_records=len(warehouse_objs) * len(product_objs),
+        users=2,
+    )
 
 
 if __name__ == "__main__":
