@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+import structlog
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
@@ -11,6 +12,8 @@ from src.exceptions import ConflictException, InsufficientStockException, NotFou
 from src.models.inventory import Inventory, InventoryTransaction
 from src.models.order import Order, OrderEvent, OrderItem
 from src.models.product import Product
+
+logger = structlog.get_logger(__name__)
 
 ORDER_LOAD_OPTS = [
     selectinload(Order.items).selectinload(OrderItem.product),
@@ -125,6 +128,13 @@ class OrderService:
         self.db.add(event)
         await self.db.flush()
         await self.db.refresh(order)
+        logger.info(
+            "order.created",
+            order_id=str(order.id),
+            order_number=order.order_number,
+            total_amount=str(order.total_amount),
+            customer_name=order.customer_name,
+        )
         return order
 
     async def cancel_order(self, order_id: UUID, user_id: UUID) -> Order:
@@ -159,6 +169,12 @@ class OrderService:
         self.db.add(event)
         await self.db.flush()
         await self.db.refresh(order)
+        logger.info(
+            "order.cancelled",
+            order_id=str(order.id),
+            order_number=order.order_number,
+            previous_status=old_status,
+        )
         return order
 
     async def process_return(self, order_id: UUID, user_id: UUID) -> Order:
@@ -208,6 +224,11 @@ class OrderService:
         self.db.add(event)
         await self.db.flush()
         await self.db.refresh(order)
+        logger.info(
+            "order.returned",
+            order_id=str(order.id),
+            order_number=order.order_number,
+        )
         return order
 
     async def update_status(
@@ -238,6 +259,13 @@ class OrderService:
         self.db.add(event)
         await self.db.flush()
         await self.db.refresh(order)
+        logger.info(
+            "order.status_changed",
+            order_id=str(order.id),
+            order_number=order.order_number,
+            from_status=old_status,
+            to_status=new_status,
+        )
         return order
 
     async def get_order(self, order_id: UUID) -> Order:
