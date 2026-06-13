@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -26,9 +27,27 @@ from src.config import settings
 from src.database import engine
 from src.exceptions import AppException
 from src.limiter import limiter
+from src.middleware.logging_middleware import LoggingMiddleware, scrub_sensitive_keys
 from src.middleware.request_id import RequestIDMiddleware
 
-logger = structlog.get_logger(__name__)
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        scrub_sensitive_keys,
+        structlog.processors.JSONRenderer(),
+    ],
+    wrapper_class=structlog.stdlib.BoundLogger,
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    cache_logger_on_first_use=True,
+)
 
 _file_handler = TimedRotatingFileHandler(
     filename="logs/api.log",
@@ -39,7 +58,17 @@ _file_handler = TimedRotatingFileHandler(
 )
 _file_handler.setLevel(getattr(logging, settings.LOG_LEVEL.upper()))
 _file_handler.setFormatter(logging.Formatter("%(message)s"))
-logging.getLogger().addHandler(_file_handler)
+
+_stdout_handler = logging.StreamHandler(sys.stdout)
+_stdout_handler.setLevel(getattr(logging, settings.LOG_LEVEL.upper()))
+_stdout_handler.setFormatter(logging.Formatter("%(message)s"))
+
+root_logger = logging.getLogger()
+root_logger.addHandler(_stdout_handler)
+root_logger.addHandler(_file_handler)
+root_logger.setLevel(getattr(logging, settings.LOG_LEVEL.upper()))
+
+logger = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
@@ -48,7 +77,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
         await conn.run_sync(lambda sync_conn: sync_conn.execute(text("SELECT 1")))
     logger.info("Database connection verified")
-    r = aioredis.from_url(str(settings.REDIS_URL))  # type: ignore[no-untyped-call]
+    r = aioredis.from_url(str(settings.REDIS_URL))
     await r.ping()
     await r.aclose()
     logger.info("Redis connection verified")
@@ -67,10 +96,9 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-app.add_middleware(RequestIDMiddleware)
-
+app.add_middleware(LoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -78,6 +106,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestIDMiddleware)  # outermost — sets request_id before other middleware
 
 app.include_router(auth_router)
 app.include_router(health_router, prefix="", tags=["Health"])
@@ -113,6 +142,8 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
             "request_id": getattr(request.state, "request_id", None),
         },
     )
+
+
 app.include_router(products_router)
 app.include_router(inventory_router)
 app.include_router(orders_router)
