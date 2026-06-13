@@ -3,11 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+import structlog
 from sqlalchemy import func, select
 
 from src.exceptions import ConflictException, NotFoundException
 from src.models.product import Product
 from src.schemas.product import ProductCreate, ProductUpdate
+
+logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,6 +86,12 @@ class ProductService:
         self.db.add(product)
         await self.db.flush()
         await self.db.refresh(product)
+        logger.info(
+            "product.created",
+            product_id=str(product.id),
+            sku=product.sku,
+            name=product.name,
+        )
         return product
 
     async def update_product(self, product_id: UUID, data: ProductUpdate) -> Product:
@@ -92,9 +101,20 @@ class ProductService:
             setattr(product, field, value)
         await self.db.flush()
         await self.db.refresh(product)
+        logger.info(
+            "product.updated",
+            product_id=str(product.id),
+            sku=product.sku,
+            updated_fields=list(update_data.keys()),
+        )
         return product
 
     async def soft_delete_product(self, product_id: UUID) -> None:
         product = await self.get_product(product_id)
         product.is_active = False
         await self.db.flush()
+        logger.info(
+            "product.deleted",
+            product_id=str(product.id),
+            sku=product.sku,
+        )
