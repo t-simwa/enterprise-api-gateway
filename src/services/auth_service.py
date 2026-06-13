@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
+import structlog
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from redis import asyncio as aioredis
@@ -15,6 +16,8 @@ from src.models.user import User
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = structlog.get_logger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -74,6 +77,12 @@ class AuthService:
         )
         self.db.add(user)
         await self.db.flush()
+        logger.info(
+            "user.registered",
+            user_id=str(user.id),
+            email=user.email,
+            role=user.role,
+        )
         return user
 
     async def authenticate_user(self, email: str, password: str) -> tuple[str, str]:
@@ -87,6 +96,12 @@ class AuthService:
             raise ForbiddenException("User account is disabled")
         access_token = self.create_access_token(str(user.id), user.role)
         refresh_token = self.create_refresh_token(str(user.id))
+        logger.info(
+            "user.login",
+            user_id=str(user.id),
+            email=user.email,
+            role=user.role,
+        )
         return access_token, refresh_token
 
     async def refresh_access_token(self, refresh_token: str) -> str:
@@ -102,7 +117,12 @@ class AuthService:
             raise UnauthorizedException("User not found")
         if not user.is_active:
             raise ForbiddenException("User account is disabled")
-        return self.create_access_token(str(user.id), user.role)
+        new_token = self.create_access_token(str(user.id), user.role)
+        logger.info(
+            "user.token_refreshed",
+            user_id=str(user.id),
+        )
+        return new_token
 
     async def logout_user(self, user_id: str, refresh_token: str) -> None:
         try:
@@ -123,3 +143,7 @@ class AuthService:
         r = aioredis.from_url(str(settings.REDIS_URL))  # type: ignore[no-untyped-call]
         await r.setex(f"blacklist:{refresh_token}", int(remaining), "1")
         await r.aclose()
+        logger.info(
+            "user.logout",
+            user_id=user_id,
+        )
