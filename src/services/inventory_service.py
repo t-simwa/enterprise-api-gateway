@@ -3,11 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+import structlog
 from sqlalchemy import Select, func, select
 
 from src.exceptions import InsufficientStockException, NotFoundException
 from src.models.inventory import Inventory, InventoryTransaction, Warehouse
 from src.models.product import Product
+
+logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -108,6 +111,15 @@ class InventoryService:
         await self.db.flush()
         await self.db.refresh(inv_row)
 
+        logger.info(
+            "stock.adjusted",
+            product_id=str(product_id),
+            warehouse_id=str(warehouse_id),
+            change_qty=change_qty,
+            new_quantity=inv_row.quantity,
+            reason=reason,
+        )
+
         return {
             "product_id": inv_row.product_id,
             "warehouse_id": inv_row.warehouse_id,
@@ -178,6 +190,14 @@ class InventoryService:
         await self.db.flush()
         await self.db.refresh(from_inv)
         await self.db.refresh(to_inv)
+
+        logger.info(
+            "stock.transferred",
+            product_id=str(product_id),
+            from_warehouse_id=str(from_warehouse_id),
+            to_warehouse_id=str(to_warehouse_id),
+            quantity=quantity,
+        )
 
         return {
             "product_id": product_id,
