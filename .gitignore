@@ -13,3 +13,4 @@ dist/
 build/
 logs/
 *.cover
+*.py,cover
