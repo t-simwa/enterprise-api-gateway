@@ -28,6 +28,7 @@ from src.database import engine
 from src.exceptions import AppException
 from src.limiter import limiter
 from src.middleware.logging_middleware import LoggingMiddleware, scrub_sensitive_keys
+from src.middleware.metrics import MetricsMiddleware, metrics_endpoint
 from src.middleware.request_id import RequestIDMiddleware
 
 structlog.configure(
@@ -106,8 +107,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RequestIDMiddleware)  # outermost — sets request_id before other middleware
+app.add_middleware(MetricsMiddleware)
+app.add_middleware(RequestIDMiddleware)  # outermost — sets request_id first in dispatch
 
+app.add_route("/metrics", metrics_endpoint, include_in_schema=False)
 app.include_router(auth_router)
 app.include_router(health_router, prefix="", tags=["Health"])
 

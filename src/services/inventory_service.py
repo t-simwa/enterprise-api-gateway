@@ -7,6 +7,7 @@ import structlog
 from sqlalchemy import Select, func, select
 
 from src.exceptions import InsufficientStockException, NotFoundException
+from src.middleware.metrics import stock_adjustments
 from src.models.inventory import Inventory, InventoryTransaction, Warehouse
 from src.models.product import Product
 
@@ -110,6 +111,8 @@ class InventoryService:
         self.db.add(tx)
         await self.db.flush()
         await self.db.refresh(inv_row)
+
+        stock_adjustments.labels(reason=reason).inc()
 
         logger.info(
             "stock.adjusted",

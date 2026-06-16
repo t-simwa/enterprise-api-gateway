@@ -9,6 +9,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
 from src.exceptions import ConflictException, InsufficientStockException, NotFoundException
+from src.middleware.metrics import active_orders
 from src.models.inventory import Inventory, InventoryTransaction
 from src.models.order import Order, OrderEvent, OrderItem
 from src.models.product import Product
@@ -128,6 +129,7 @@ class OrderService:
         self.db.add(event)
         await self.db.flush()
         await self.db.refresh(order)
+        active_orders.inc()
         logger.info(
             "order.created",
             order_id=str(order.id),
