@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
+    ALLOWED_HOSTS: list[str] = ["*"]
+    SECURITY_BCRYPT_ROUNDS: int = 12
+    JWT_ALGORITHM: str = "HS256"
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
 

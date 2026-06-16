@@ -19,7 +19,11 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=settings.SECURITY_BCRYPT_ROUNDS,
+)
 
 ACCESS_TOKEN_EXPIRE = timedelta(minutes=30)
 REFRESH_TOKEN_EXPIRE = timedelta(days=7)
@@ -44,7 +48,7 @@ class AuthService:
             "iat": now,
             "exp": now + ACCESS_TOKEN_EXPIRE,
         }
-        return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")  # type: ignore[no-any-return]
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)  # type: ignore[no-any-return]
 
     def create_refresh_token(self, user_id: str) -> str:
         now = datetime.now(tz=UTC)
@@ -55,11 +59,11 @@ class AuthService:
             "iat": now,
             "exp": now + REFRESH_TOKEN_EXPIRE,
         }
-        return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")  # type: ignore[no-any-return]
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)  # type: ignore[no-any-return]
 
     def decode_token(self, token: str) -> dict[str, Any]:
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
             return payload  # type: ignore[no-any-return]
         except JWTError:
             raise UnauthorizedException("Invalid or expired token") from None
@@ -129,7 +133,7 @@ class AuthService:
             payload = jwt.decode(
                 refresh_token,
                 settings.SECRET_KEY,
-                algorithms=["HS256"],
+                algorithms=[settings.JWT_ALGORITHM],
                 options={"verify_exp": True},
             )
         except JWTError:

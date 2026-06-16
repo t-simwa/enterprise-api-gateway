@@ -30,6 +30,7 @@ from src.limiter import limiter
 from src.middleware.logging_middleware import LoggingMiddleware, scrub_sensitive_keys
 from src.middleware.metrics import MetricsMiddleware, metrics_endpoint
 from src.middleware.request_id import RequestIDMiddleware
+from src.middleware.sanitization import InputSanitizationMiddleware, SecurityHeadersMiddleware
 
 structlog.configure(
     processors=[
@@ -108,6 +109,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(MetricsMiddleware)
+app.add_middleware(InputSanitizationMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)  # outermost — sets request_id first in dispatch
 
 app.add_route("/metrics", metrics_endpoint, include_in_schema=False)
