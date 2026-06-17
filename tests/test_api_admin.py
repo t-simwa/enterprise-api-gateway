@@ -48,7 +48,11 @@ async def test_admin_get_metrics(client: AsyncClient, admin_headers: dict[str, s
 async def test_admin_clear_cache(
     client: AsyncClient, admin_headers: dict[str, str], session_factory
 ) -> None:
-    resp = await client.post("/admin/cache/clear", headers=admin_headers)
+    resp = await client.post(
+        "/admin/cache/clear",
+        headers={**admin_headers, "Content-Type": "application/json"},
+        json={},
+    )
     assert resp.status_code == 200
     assert resp.json()["status"] == "cache cleared"
 

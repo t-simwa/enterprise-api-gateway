@@ -24,21 +24,21 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         if request.method in ("POST", "PUT", "PATCH"):
-            content_type = request.headers.get("content-type", "")
-            if "application/json" not in content_type:
-                return JSONResponse(
-                    status_code=415,
-                    content={
-                        "status": "error",
-                        "code": "UNSUPPORTED_MEDIA_TYPE",
-                        "message": "Content-Type must be application/json",
-                        "details": {},
-                        "timestamp": "",
-                        "request_id": getattr(request.state, "request_id", None),
-                    },
-                )
             body = await request.body()
             if body:
+                content_type = request.headers.get("content-type", "")
+                if "application/json" not in content_type:
+                    return JSONResponse(
+                        status_code=415,
+                        content={
+                            "status": "error",
+                            "code": "UNSUPPORTED_MEDIA_TYPE",
+                            "message": "Content-Type must be application/json",
+                            "details": {},
+                            "timestamp": "",
+                            "request_id": getattr(request.state, "request_id", None),
+                        },
+                    )
                 try:
                     data = json.loads(body)
                     sanitized = _sanitize_value(data)

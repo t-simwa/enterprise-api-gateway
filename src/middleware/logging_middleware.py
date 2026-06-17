@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, MutableMapping
 from typing import Any
 
 import structlog
@@ -12,7 +12,7 @@ from starlette.responses import Response
 SENSITIVE_FIELDS = {"password", "token", "secret", "authorization", "refresh_token"}
 
 
-def scrub_sensitive_keys(logger: Any, method_name: str, event_dict: dict) -> dict:  # noqa: ARG001
+def scrub_sensitive_keys(logger: Any, method_name: str, event_dict: MutableMapping[str, Any]) -> MutableMapping[str, Any]:  # noqa: ARG001
     for key in list(event_dict.keys()):
         lower_key = key.lower()
         if any(field in lower_key for field in SENSITIVE_FIELDS):

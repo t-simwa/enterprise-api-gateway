@@ -79,7 +79,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
         await conn.run_sync(lambda sync_conn: sync_conn.execute(text("SELECT 1")))
     logger.info("Database connection verified")
-    r = aioredis.from_url(str(settings.REDIS_URL))
+    r = aioredis.from_url(str(settings.REDIS_URL))  # type: ignore[no-untyped-call]
     await r.ping()
     await r.aclose()
     logger.info("Redis connection verified")
@@ -98,7 +98,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 app.add_middleware(LoggingMiddleware)
 app.add_middleware(
