@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
+    SENTRY_DSN: str = ""
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
+    AWS_REGION: str = "us-east-1"
+    S3_BUCKET_NAME: str = "enterprise-api-gateway-images"
+    S3_PRESIGNED_URL_EXPIRY: int = 3600
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

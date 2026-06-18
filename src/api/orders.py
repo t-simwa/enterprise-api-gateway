@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import csv
+import io
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import StreamingResponse
 
 from src.api.deps import get_db, require_roles
 from src.models.order import Order
@@ -192,6 +195,38 @@ async def get_timeline(
         )
         for e in events
     ]
+
+
+@router.get("/export/csv")
+async def export_orders_csv(
+    status: str | None = None,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(require_roles("admin", "manager")),  # noqa: B008
+) -> StreamingResponse:
+    svc = OrderService(db)
+    items, _ = await svc.list_orders(status=status, page=1, size=10000)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "order_number", "customer_name", "customer_email", "status",
+        "total_amount", "items_count", "created_at",
+    ])
+    for order in items:
+        writer.writerow([
+            order.order_number,
+            order.customer_name,
+            order.customer_email or "",
+            order.status,
+            str(order.total_amount),
+            len(order.items),
+            order.created_at.isoformat() if order.created_at else "",
+        ])
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=orders_export.csv"},
+    )
 
 
 @router.post("/batch", status_code=202)

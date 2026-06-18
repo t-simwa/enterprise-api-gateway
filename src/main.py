@@ -18,6 +18,7 @@ from sqlalchemy import text
 
 from src.api.admin import router as admin_router
 from src.api.auth import router as auth_router
+from src.api.files import router as files_router
 from src.api.health import router as health_router
 from src.api.inventory import router as inventory_router
 from src.api.orders import router as orders_router
@@ -76,6 +77,16 @@ logger = structlog.get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Starting up...")
+    if settings.SENTRY_DSN:
+        import sentry_sdk
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            environment=settings.ENVIRONMENT,
+            traces_sample_rate=0.2,
+            profiles_sample_rate=0.1,
+            send_default_pii=False,
+        )
+        logger.info("Sentry initialized")
     async with engine.begin() as conn:
         await conn.run_sync(lambda sync_conn: sync_conn.execute(text("SELECT 1")))
     logger.info("Database connection verified")
@@ -86,6 +97,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     logger.info("Shutting down...")
     await engine.dispose()
+    logging.shutdown()
+    logger.info("server.shutdown", message="Application shutting down gracefully")
 
 
 app = FastAPI(
@@ -137,6 +150,9 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     req_id = getattr(request.state, "request_id", None)
     logger.error("Unhandled exception", exc_info=exc, request_id=req_id)
+    if settings.SENTRY_DSN:
+        import sentry_sdk
+        sentry_sdk.capture_exception(exc)
     return JSONResponse(
         status_code=500,
         content={
@@ -154,4 +170,5 @@ app.include_router(products_router)
 app.include_router(inventory_router)
 app.include_router(orders_router)
 app.include_router(warehouses_router)
+app.include_router(files_router)
 app.include_router(admin_router)
