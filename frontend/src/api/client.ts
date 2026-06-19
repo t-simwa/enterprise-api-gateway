@@ -19,18 +19,18 @@ export function setOnUnauthorized(cb: (() => void) | null) {
 }
 
 export const apiClient = ky.create({
-  prefixUrl: API_BASE_URL,
+  baseUrl: API_BASE_URL,
   hooks: {
     beforeRequest: [
-      (request) => {
+      (state: { request: Request }) => {
         if (accessToken) {
-          request.headers.set('Authorization', `Bearer ${accessToken}`)
+          state.request.headers.set('Authorization', `Bearer ${accessToken}`)
         }
       },
     ],
     afterResponse: [
-      async (_request, _options, response) => {
-        if (response.status === 401 && onUnauthorized) {
+      (state: { response: Response }) => {
+        if (state.response.status === 401 && onUnauthorized) {
           onUnauthorized()
         }
       },
