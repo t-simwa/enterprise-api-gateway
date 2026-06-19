@@ -6,7 +6,7 @@ import type { User } from '@/types'
 
 interface AuthState {
   user: User | null
-  token: string | null
+  accessToken: string | null
   refreshToken: string | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
@@ -18,7 +18,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
+      accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
 
@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>()(
         const response = await authApi.login({ email, password })
         setAccessToken(response.access_token)
         set({
-          token: response.access_token,
+          accessToken: response.access_token,
           refreshToken: response.refresh_token,
           isAuthenticated: true,
         })
@@ -41,7 +41,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         setAccessToken(null)
         authApi.logout().catch(() => {})
-        set({ user: null, token: null, refreshToken: null, isAuthenticated: false })
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false })
       },
 
       refreshTokenAction: async () => {
@@ -50,10 +50,10 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.refresh(rt)
           setAccessToken(response.access_token)
-          set({ token: response.access_token })
+          set({ accessToken: response.access_token })
           return true
         } catch {
-          set({ user: null, token: null, refreshToken: null, isAuthenticated: false })
+          set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false })
           setAccessToken(null)
           return false
         }
@@ -62,7 +62,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        token: state.token,
+        accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         user: state.user,
       }),
@@ -71,9 +71,14 @@ export const useAuthStore = create<AuthState>()(
 )
 
 setOnUnauthorized(() => {
-  useAuthStore.getState().logout()
+  const { refreshTokenAction, logout } = useAuthStore.getState()
+  if (useAuthStore.getState().refreshToken) {
+    refreshTokenAction()
+  } else {
+    logout()
+  }
 })
 
-if (useAuthStore.getState().token) {
-  setAccessToken(useAuthStore.getState().token)
+if (useAuthStore.getState().accessToken) {
+  setAccessToken(useAuthStore.getState().accessToken)
 }
