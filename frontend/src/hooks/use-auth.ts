@@ -23,7 +23,21 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (email: string, password: string) => {
-        const response = await authApi.login({ email, password })
+        let response: Awaited<ReturnType<typeof authApi.login>>
+        try {
+          response = await authApi.login({ email, password })
+        } catch (err: unknown) {
+          if (err instanceof Error && 'response' in err) {
+            const httpErr = err as { response: Response }
+            try {
+              const body = await httpErr.response.json() as { detail?: string }
+              throw new Error(body.detail || 'Invalid email or password')
+            } catch {
+              throw new Error('Invalid email or password')
+            }
+          }
+          throw err
+        }
         setAccessToken(response.access_token)
         set({
           accessToken: response.access_token,
