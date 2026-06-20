@@ -24,6 +24,7 @@ from src.api.inventory import router as inventory_router
 from src.api.orders import router as orders_router
 from src.api.products import router as products_router
 from src.api.warehouses import router as warehouses_router
+from src.api.websocket import router as ws_router
 from src.config import settings
 from src.database import engine
 from src.exceptions import AppException
@@ -172,3 +173,4 @@ app.include_router(orders_router)
 app.include_router(warehouses_router)
 app.include_router(files_router)
 app.include_router(admin_router)
+app.include_router(ws_router)

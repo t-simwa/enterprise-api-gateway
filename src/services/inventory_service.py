@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -123,6 +124,20 @@ class InventoryService:
             reason=reason,
         )
 
+        if new_qty < product.reorder_point:
+            from src.api.websocket import manager
+
+            asyncio.create_task(
+                manager.broadcast_low_stock_alert(
+                    product_id=str(product_id),
+                    product_name=product.name,
+                    sku=product.sku,
+                    current_stock=new_qty,
+                    reorder_point=product.reorder_point,
+                    warehouse_id=str(warehouse_id),
+                )
+            )
+
         return {
             "product_id": inv_row.product_id,
             "warehouse_id": inv_row.warehouse_id,
@@ -201,6 +216,20 @@ class InventoryService:
             to_warehouse_id=str(to_warehouse_id),
             quantity=quantity,
         )
+
+        if from_inv.quantity < product.reorder_point:
+            from src.api.websocket import manager
+
+            asyncio.create_task(
+                manager.broadcast_low_stock_alert(
+                    product_id=str(product_id),
+                    product_name=product.name,
+                    sku=product.sku,
+                    current_stock=from_inv.quantity,
+                    reorder_point=product.reorder_point,
+                    warehouse_id=str(from_warehouse_id),
+                )
+            )
 
         return {
             "product_id": product_id,

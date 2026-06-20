@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeftRight } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeftRight, Wifi, WifiOff } from 'lucide-react'
 import { inventoryApi } from '@/api/inventory'
 import { productsApi } from '@/api/products'
 import { toast } from 'sonner'
+import { useWebSocket, type WSMessage } from '@/hooks/use-websocket'
 import InventoryHeatmap from '@/app/components/inventory/heatmap'
 import StockTable from '@/app/components/inventory/stock-table'
 import LowStockAlert from '@/app/components/inventory/low-stock-alert'
@@ -19,6 +20,14 @@ export default function InventoryPage() {
   const [adjustOpen, setAdjustOpen] = useState(false)
   const [adjustProduct, setAdjustProduct] = useState('')
   const [adjustWarehouse, setAdjustWarehouse] = useState('')
+
+  const queryClient = useQueryClient()
+  const { connected } = useWebSocket(useCallback((msg: WSMessage) => {
+    if (msg.type === 'low_stock_alert') {
+      queryClient.invalidateQueries({ queryKey: ['inventory-all'] })
+      queryClient.invalidateQueries({ queryKey: ['low-stock-alerts'] })
+    }
+  }, [queryClient]))
 
   const { data: inventoryData, isLoading: invLoading } = useQuery({
     queryKey: ['inventory-all'],
@@ -61,7 +70,21 @@ export default function InventoryPage() {
       <Breadcrumbs />
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">Inventory</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">Inventory</h1>
+          <span
+            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
+            style={{
+              backgroundColor: connected ? 'var(--color-success)' : 'var(--color-danger)',
+              color: '#fff',
+              opacity: 0.85,
+            }}
+            title={connected ? 'WebSocket connected' : 'WebSocket disconnected'}
+          >
+            {connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            {connected ? 'Live' : 'Offline'}
+          </span>
+        </div>
         <Button variant="secondary" size="sm" className="h-9" onClick={() => navigate('/inventory/transfers')}>
           <ArrowLeftRight className="w-4 h-4 mr-1.5" /> Transfer Stock
         </Button>
