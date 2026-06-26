@@ -16,3 +16,4 @@ logs/
 postman/node_modules/
 *.cover
 *.py,cover
+.coverage.*
