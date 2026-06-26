@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { api, formatUSD } from "@/lib/api";
 import { StatusBadge } from "@/components/ui-bits/status-badge";
+import { ProductFormDialog } from "@/components/forms/product-form";
 
 export const Route = createFileRoute("/_app/products")({
   head: () => ({ meta: [{ title: "Products — Gateway" }] }),
@@ -11,6 +13,7 @@ export const Route = createFileRoute("/_app/products")({
 
 function ProductsPage() {
   const { data, isLoading } = useQuery({ queryKey: ["products"], queryFn: api.products });
+  const [productFormOpen, setProductFormOpen] = useState(false);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
@@ -21,7 +24,10 @@ function ProductsPage() {
             Catalog of {data?.length ?? 0} SKUs.
           </p>
         </div>
-        <button className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90">
+        <button
+          onClick={() => setProductFormOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+        >
           <Plus className="h-3.5 w-3.5" /> Add product
         </button>
       </div>
@@ -60,6 +66,8 @@ function ProductsPage() {
           </article>
         ))}
       </div>
+
+      <ProductFormDialog open={productFormOpen} onOpenChange={setProductFormOpen} />
     </div>
   );
 }

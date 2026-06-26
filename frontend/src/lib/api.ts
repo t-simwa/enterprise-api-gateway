@@ -64,6 +64,22 @@ export interface LowStockItem {
   total_qty: number;
   reorder_point: number;
 }
+export interface OrderItemInput {
+  product_id: string;
+  quantity: number;
+}
+export interface OrderCreateInput {
+  customer_name: string;
+  customer_email?: string;
+  items: OrderItemInput[];
+}
+export interface ProductCreateInput {
+  sku: string;
+  name: string;
+  category?: string;
+  unit_price: number;
+  reorder_point?: number;
+}
 export interface InventoryRow {
   product_id: string;
   sku: string;
@@ -178,6 +194,33 @@ function mockLowStock(): LowStockItem[] {
     });
 }
 
+function mockCreateOrder(input: OrderCreateInput): Order {
+  const num = 10300 + Math.floor(Math.random() * 300);
+  return {
+    id: `o_new_${Date.now()}`,
+    order_number: `EAG-${num}`,
+    customer_name: input.customer_name,
+    status: "pending",
+    total_amount: 0,
+    items_count: input.items.length,
+    created_at: new Date().toISOString(),
+  };
+}
+
+function mockCreateProduct(input: ProductCreateInput): Product {
+  // Pick a category from the list or use the provided one
+  const cat = input.category || CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+  return {
+    id: `p_new_${Date.now()}`,
+    sku: input.sku,
+    name: input.name,
+    category: cat,
+    unit_price: input.unit_price,
+    reorder_point: input.reorder_point ?? 10,
+    is_active: true,
+  };
+}
+
 // Helper to unwrap paginated backend responses: { items, total, page, size, pages } -> items[]
 async function reqList<T>(path: string, init?: RequestInit): Promise<T[]> {
   const data = await req<{ items: T[] }>(path, init);
@@ -199,6 +242,10 @@ export const api = {
     isMock ? Promise.resolve(INVENTORY) : req<InventoryRow[]>(apiPath("/inventory")),
   lowStock: async (): Promise<LowStockItem[]> =>
     isMock ? Promise.resolve(mockLowStock()) : req<LowStockItem[]>(apiPath("/inventory/low-stock")),
+  createOrder: async (input: OrderCreateInput): Promise<Order> =>
+    isMock ? Promise.resolve(mockCreateOrder(input)) : req<Order>(apiPath("/orders"), { method: "POST", body: JSON.stringify(input) }),
+  createProduct: async (input: ProductCreateInput): Promise<Product> =>
+    isMock ? Promise.resolve(mockCreateProduct(input)) : req<Product>(apiPath("/products"), { method: "POST", body: JSON.stringify(input) }),
 };
 
 export function sparkSeries(seed: number, len = 14): number[] {

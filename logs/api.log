@@ -2203,3 +2203,9 @@ SELECT 1
 [cached since 2769s ago] ()
 ROLLBACK
 {"request_id": "2c46c3e9-e38a-47b0-98b6-197dacf6bf3c", "method": "GET", "path": "/health", "status_code": 200, "duration_ms": 330.65, "content_length": "134", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:33:31.933298Z"}
+{"request_id": "0deb0819-01e1-4def-a883-de0981faa050", "method": "GET", "path": "/health", "query_params": {}, "client_ip": "127.0.0.1", "user_agent": "Python-urllib/3.12", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:34:03.109962Z"}
+BEGIN (implicit)
+SELECT 1
+[cached since 2801s ago] ()
+ROLLBACK
+{"request_id": "0deb0819-01e1-4def-a883-de0981faa050", "method": "GET", "path": "/health", "status_code": 200, "duration_ms": 404.59, "content_length": "135", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:34:03.547575Z"}
