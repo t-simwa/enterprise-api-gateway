@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import asyncio
-import json
+import contextlib
 from datetime import datetime
 from typing import Any
 
@@ -33,10 +32,8 @@ class ConnectionManager:
         if user_id not in self.active_connections:
             return
         for ws in self.active_connections[user_id]:
-            try:
+            with contextlib.suppress(Exception):
                 await ws.send_json(message)
-            except Exception:
-                pass
 
     async def broadcast_to_all(self, message: dict[str, Any]) -> None:
         for user_id in list(self.active_connections.keys()):

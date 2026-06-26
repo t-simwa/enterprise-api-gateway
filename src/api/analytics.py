@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
 @router.get("/revenue")
 async def revenue_series(
     days: int = Query(30, ge=1, le=365),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict[str, Any]]:
     svc = AnalyticsService(db)
     return await svc.get_daily_revenue(days)

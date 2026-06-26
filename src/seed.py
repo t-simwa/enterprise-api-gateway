@@ -93,12 +93,12 @@ async def seed_database() -> None:
         # ── 3. Inventory (48 rows, matching mock formula) ────────────
         # Mock formula: qty = max(0, ((i*7 + j*11) % 90) - (80 if j==0 and i%4==0 else 0))
         # where i = product index, j = warehouse index
-        _LOW_STOCK_PRODUCTS = {0, 3, 6, 10}  # indices to make low stock (total_qty < reorder_point)
+        _low_stock_products = {0, 3, 6, 10}  # indices to make low stock (total_qty < reorder_point)
         for i, product in enumerate(product_objs):
             for j, warehouse in enumerate(warehouse_objs):
                 qty = max(0, ((i * 7 + j * 11) % 90) - (80 if j == 0 and i % 4 == 0 else 0))
                 # Ensure some products are below reorder point
-                if i in _LOW_STOCK_PRODUCTS:
+                if i in _low_stock_products:
                     qty = max(0, qty - 60)
                 reserved = min(qty, round(qty * 0.15))
                 inventory = Inventory(
@@ -178,7 +178,8 @@ async def seed_database() -> None:
             )
             session.add(event)
 
-            # Add a transition to "delivered" for delivered orders so avg_processing_hours is meaningful
+            # Add a transition to "delivered" for delivered orders
+            # so avg_processing_hours is meaningful
             if status == "delivered":
                 transit = OrderEvent(
                     order_id=order.id,

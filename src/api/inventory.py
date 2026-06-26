@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/inventory", tags=["Inventory"])
 
 @router.get("")
 async def list_inventory(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> list[dict[str, Any]]:
     svc = InventoryService(db)
     return await svc.get_all_inventory()
