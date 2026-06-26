@@ -66,6 +66,27 @@ class InventoryService:
             "warehouses": warehouses,
         }
 
+    async def get_all_inventory(self) -> list[dict[str, Any]]:
+        result = await self.db.execute(
+            select(Inventory, Product, Warehouse)
+            .join(Product, Inventory.product_id == Product.id)
+            .join(Warehouse, Inventory.warehouse_id == Warehouse.id)
+            .where(Product.is_active)
+        )
+        rows = result.all()
+        return [
+            {
+                "product_id": str(inv.product_id),
+                "sku": product.sku,
+                "name": product.name,
+                "warehouse": wh.name,
+                "quantity": inv.quantity,
+                "reserved": inv.reserved_qty,
+                "available": max(inv.quantity - inv.reserved_qty, 0),
+            }
+            for inv, product, wh in rows
+        ]
+
     async def adjust_stock(
         self,
         product_id: UUID,

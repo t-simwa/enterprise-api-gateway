@@ -47,6 +47,7 @@ class OrderResponse(BaseModel):
     total_amount: Decimal
     notes: str | None
     items: list[OrderItemResponse]
+    items_count: int
     created_at: datetime
     updated_at: datetime
 

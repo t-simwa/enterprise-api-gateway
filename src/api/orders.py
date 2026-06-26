@@ -47,6 +47,7 @@ def _build_order_response(order: Order) -> OrderResponse:
             )
             for item in order.items
         ],
+        items_count=len(order.items),
         created_at=order.created_at,
         updated_at=order.created_at,
     )

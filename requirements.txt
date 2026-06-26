@@ -1,3 +1,4 @@
+boto3==1.34.128
 alembic==1.13.1
 amqp==5.3.1
 annotated-types==0.7.0

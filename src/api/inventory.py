@@ -20,6 +20,14 @@ from src.services.inventory_service import InventoryService
 router = APIRouter(prefix="/api/inventory", tags=["Inventory"])
 
 
+@router.get("")
+async def list_inventory(
+    db: AsyncSession = Depends(get_db),
+) -> list[dict[str, Any]]:
+    svc = InventoryService(db)
+    return await svc.get_all_inventory()
+
+
 @router.get("/low-stock", response_model=list[LowStockItem])
 async def low_stock(
     threshold: int | None = Query(None, ge=0),
