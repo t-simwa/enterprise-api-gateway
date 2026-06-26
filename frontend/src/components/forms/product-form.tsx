@@ -52,8 +52,8 @@ export function ProductFormDialog({ open, onOpenChange }: Props) {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       reset();
       onOpenChange(false);
-    } catch {
-      setError("Failed to create product. Please try again.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create product.");
     } finally {
       setSubmitting(false);
     }
