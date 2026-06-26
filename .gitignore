@@ -12,5 +12,7 @@ htmlcov/
 dist/
 build/
 logs/
+*.gif
+postman/node_modules/
 *.cover
 *.py,cover
