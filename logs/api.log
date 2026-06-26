@@ -2051,3 +2051,155 @@ WHERE products.id IN ($1::UUID, $2::UUID, $3::UUID, $4::UUID, $5::UUID, $6::UUID
 [cached since 2498s ago] (UUID('1ce86a89-cd36-4c19-bbf5-a52a902f5209'), UUID('509b596a-c12d-431e-b99c-dd9215287969'), UUID('525a2de7-0514-42ac-b4b3-95ed643111ee'), UUID('587e292b-96ec-4490-95a1-dd34d2d14986'), UUID('5e7ba357-bc82-42cd-b68e-086fb92a1484'), UUID('61220959-25b6-4eab-81a7-cedf70824f70'), UUID('68712df6-0ae7-4fd6-b9ae-d658183b1494'), UUID('7fadbe34-8798-49d3-a9e2-7e19328e79c3'), UUID('a1e64cbd-ecb2-4c1a-abb4-ca7e2b2d92f2'), UUID('de76e246-11c1-4282-bc52-bc7a1ea40f8d'), UUID('e5c12c13-0c72-4c47-bbd6-9a869617f3ed'), UUID('e7e50b65-6195-4ec3-ba36-893e39177135'))
 ROLLBACK
 {"request_id": "df0b60f7-e2fe-4ea5-a9d9-fad68bad455a", "method": "GET", "path": "/api/orders", "status_code": 200, "duration_ms": 419.45, "content_length": "61255", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:29:43.401114Z"}
+{"request_id": "ab7d9395-0b29-495f-9054-071f6e13d202", "method": "GET", "path": "/health", "query_params": {}, "client_ip": "127.0.0.1", "user_agent": "Python-urllib/3.12", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:11.341626Z"}
+BEGIN (implicit)
+SELECT 1
+[cached since 2569s ago] ()
+ROLLBACK
+{"request_id": "ab7d9395-0b29-495f-9054-071f6e13d202", "method": "GET", "path": "/health", "status_code": 200, "duration_ms": 479.18, "content_length": "134", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:11.859732Z"}
+{"request_id": "b7f99012-ce88-4b5e-91cd-8990352dfc03", "method": "GET", "path": "/api/analytics/revenue", "query_params": {"days": "30"}, "client_ip": "172.20.0.1", "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:36.721037Z"}
+{"request_id": "635979e1-ab52-4bd8-9770-97a683f2cb25", "method": "GET", "path": "/api/orders/dashboard", "query_params": {}, "client_ip": "172.20.0.1", "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:36.835617Z"}
+{"request_id": "851d79d4-5464-4f4c-b60f-975d3e15a0f2", "method": "GET", "path": "/api/orders", "query_params": {"size": "8"}, "client_ip": "172.20.0.1", "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:36.851137Z"}
+{"request_id": "73ce91eb-c6c2-4ebc-bbe5-6e34e8e25961", "method": "GET", "path": "/api/inventory/low-stock", "query_params": {}, "client_ip": "172.20.0.1", "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:36.869140Z"}
+BEGIN (implicit)
+SELECT date(orders.created_at) AS date, coalesce(sum(orders.total_amount), $1::INTEGER) AS revenue 
+FROM orders 
+WHERE orders.status IN ($3::VARCHAR, $4::VARCHAR) AND orders.created_at >= $2::TIMESTAMP WITH TIME ZONE GROUP BY date(orders.created_at) ORDER BY date(orders.created_at)
+[cached since 2553s ago] (0, datetime.datetime(2026, 5, 27, 12, 30, 38, 50102, tzinfo=datetime.timezone.utc), 'delivered', 'returned')
+BEGIN (implicit)
+SELECT count(*) AS count_1 
+FROM (SELECT orders.order_number AS order_number, orders.customer_name AS customer_name, orders.customer_email AS customer_email, orders.status AS status, orders.total_amount AS total_amount, orders.notes AS notes, orders.created_by AS created_by, orders.created_at AS created_at, orders.id AS id, orders.updated_at AS updated_at 
+FROM orders) AS anon_1
+[cached since 2475s ago] ()
+BEGIN (implicit)
+SELECT count(*) AS count_1 
+FROM (SELECT orders.order_number AS order_number, orders.customer_name AS customer_name, orders.customer_email AS customer_email, orders.status AS status, orders.total_amount AS total_amount, orders.notes AS notes, orders.created_by AS created_by, orders.created_at AS created_at, orders.id AS id, orders.updated_at AS updated_at 
+FROM orders ORDER BY orders.created_at DESC) AS anon_1
+[cached since 2555s ago] ()
+BEGIN (implicit)
+SELECT products.sku, products.name, products.description, products.category, products.unit_price, products.unit_cost, products.reorder_point, products.is_active, products.id, products.created_at, products.updated_at, anon_1.total_qty 
+FROM products JOIN (SELECT inventory.product_id AS product_id, coalesce(sum(inventory.quantity), $1::INTEGER) AS total_qty 
+FROM inventory GROUP BY inventory.product_id) AS anon_1 ON products.id = anon_1.product_id 
+WHERE products.is_active AND anon_1.total_qty < products.reorder_point
+[cached since 2542s ago] (0,)
+SELECT coalesce(sum(orders.total_amount), $1::INTEGER) AS coalesce_1 
+FROM orders 
+WHERE orders.status IN ($2::VARCHAR, $3::VARCHAR)
+[cached since 2474s ago] (0, 'delivered', 'returned')
+SELECT orders.order_number, orders.customer_name, orders.customer_email, orders.status, orders.total_amount, orders.notes, orders.created_by, orders.created_at, orders.id, orders.updated_at 
+FROM orders ORDER BY orders.created_at DESC 
+ LIMIT $1::INTEGER OFFSET $2::INTEGER
+[cached since 2541s ago] (8, 0)
+SELECT orders.status, count(orders.id) AS count_1 
+FROM orders GROUP BY orders.status
+[cached since 2474s ago] ()
+SELECT order_events.order_id AS order_events_order_id, order_events.from_status AS order_events_from_status, order_events.to_status AS order_events_to_status, order_events.notes AS order_events_notes, order_events.created_by AS order_events_created_by, order_events.id AS order_events_id, order_events.created_at AS order_events_created_at, order_events.updated_at AS order_events_updated_at 
+FROM order_events 
+WHERE order_events.order_id IN ($1::UUID, $2::UUID, $3::UUID, $4::UUID, $5::UUID, $6::UUID, $7::UUID, $8::UUID)
+[cached since 2554s ago] (UUID('895937f7-0656-457a-9544-578fde1f3945'), UUID('383409f8-21a7-403d-9ec9-bed11427d88e'), UUID('535a431f-cc01-4fee-8c28-c7e38678e738'), UUID('69cdc087-cd62-437b-8e86-206b9adeff12'), UUID('276a9124-064e-427f-b44c-e43a2dbd59e9'), UUID('126039a3-3408-4248-b6e6-d986e9d2d2b1'), UUID('7e89aa94-2ee1-488d-81b6-37b24e7110ef'), UUID('d556cfe2-7d1b-4d8d-ad23-f59b127eed89'))
+SELECT count(*) AS count_1 
+FROM orders 
+WHERE orders.created_at >= $1::TIMESTAMP WITH TIME ZONE
+[cached since 2473s ago] (datetime.datetime(2026, 6, 26, 0, 0, tzinfo=datetime.timezone.utc),)
+ROLLBACK
+ROLLBACK
+SELECT order_items.order_id AS order_items_order_id, order_items.product_id AS order_items_product_id, order_items.quantity AS order_items_quantity, order_items.unit_price AS order_items_unit_price, order_items.total_price AS order_items_total_price, order_items.id AS order_items_id, order_items.created_at AS order_items_created_at, order_items.updated_at AS order_items_updated_at 
+FROM order_items 
+WHERE order_items.order_id IN ($1::UUID, $2::UUID, $3::UUID, $4::UUID, $5::UUID, $6::UUID, $7::UUID, $8::UUID)
+[cached since 2554s ago] (UUID('895937f7-0656-457a-9544-578fde1f3945'), UUID('383409f8-21a7-403d-9ec9-bed11427d88e'), UUID('535a431f-cc01-4fee-8c28-c7e38678e738'), UUID('69cdc087-cd62-437b-8e86-206b9adeff12'), UUID('276a9124-064e-427f-b44c-e43a2dbd59e9'), UUID('126039a3-3408-4248-b6e6-d986e9d2d2b1'), UUID('7e89aa94-2ee1-488d-81b6-37b24e7110ef'), UUID('d556cfe2-7d1b-4d8d-ad23-f59b127eed89'))
+SELECT count(*) AS count_1 
+FROM orders 
+WHERE orders.status IN ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR)
+[cached since 2473s ago] ('pending', 'confirmed', 'processing')
+SELECT products.id AS products_id, products.sku AS products_sku, products.name AS products_name, products.description AS products_description, products.category AS products_category, products.unit_price AS products_unit_price, products.unit_cost AS products_unit_cost, products.reorder_point AS products_reorder_point, products.is_active AS products_is_active, products.created_at AS products_created_at, products.updated_at AS products_updated_at 
+FROM products 
+WHERE products.id IN ($1::UUID, $2::UUID, $3::UUID, $4::UUID, $5::UUID, $6::UUID, $7::UUID, $8::UUID, $9::UUID, $10::UUID, $11::UUID, $12::UUID)
+[cached since 2554s ago] (UUID('1ce86a89-cd36-4c19-bbf5-a52a902f5209'), UUID('509b596a-c12d-431e-b99c-dd9215287969'), UUID('525a2de7-0514-42ac-b4b3-95ed643111ee'), UUID('587e292b-96ec-4490-95a1-dd34d2d14986'), UUID('5e7ba357-bc82-42cd-b68e-086fb92a1484'), UUID('61220959-25b6-4eab-81a7-cedf70824f70'), UUID('68712df6-0ae7-4fd6-b9ae-d658183b1494'), UUID('7fadbe34-8798-49d3-a9e2-7e19328e79c3'), UUID('a1e64cbd-ecb2-4c1a-abb4-ca7e2b2d92f2'), UUID('de76e246-11c1-4282-bc52-bc7a1ea40f8d'), UUID('e5c12c13-0c72-4c47-bbd6-9a869617f3ed'), UUID('e7e50b65-6195-4ec3-ba36-893e39177135'))
+SELECT count(*) AS count_1 
+FROM (SELECT products.sku AS sku, products.name AS name, products.description AS description, products.category AS category, products.unit_price AS unit_price, products.unit_cost AS unit_cost, products.reorder_point AS reorder_point, products.is_active AS is_active, products.id AS id, products.created_at AS created_at, products.updated_at AS updated_at 
+FROM products JOIN (SELECT inventory.product_id AS product_id, coalesce(sum(inventory.quantity), $1::INTEGER) AS total_qty 
+FROM inventory GROUP BY inventory.product_id) AS anon_2 ON products.id = anon_2.product_id 
+WHERE products.is_active AND anon_2.total_qty < products.reorder_point) AS anon_1
+[cached since 2473s ago] (0,)
+{"request_id": "b7f99012-ce88-4b5e-91cd-8990352dfc03", "method": "GET", "path": "/api/analytics/revenue", "status_code": 200, "duration_ms": 2619.35, "content_length": "277", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:39.438490Z"}
+{"request_id": "73ce91eb-c6c2-4ebc-bbe5-6e34e8e25961", "method": "GET", "path": "/api/inventory/low-stock", "status_code": 200, "duration_ms": 2580.69, "content_length": "460", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:39.452282Z"}
+ROLLBACK
+SELECT avg(EXTRACT(epoch FROM orders.created_at)) AS avg_1 
+FROM orders 
+WHERE orders.status = $1::VARCHAR
+[cached since 2473s ago] ('delivered',)
+SELECT avg(EXTRACT(epoch FROM order_events.created_at)) AS avg_1 
+FROM order_events 
+WHERE order_events.to_status = $1::VARCHAR AND order_events.order_id IN (SELECT orders.id 
+FROM orders 
+WHERE orders.status = $2::VARCHAR)
+[cached since 2473s ago] ('delivered', 'delivered')
+{"request_id": "851d79d4-5464-4f4c-b60f-975d3e15a0f2", "method": "GET", "path": "/api/orders", "status_code": 200, "duration_ms": 2673.07, "content_length": "7783", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:39.535760Z"}
+ROLLBACK
+{"request_id": "635979e1-ab52-4bd8-9770-97a683f2cb25", "method": "GET", "path": "/api/orders/dashboard", "status_code": 200, "duration_ms": 2780.54, "content_length": "230", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:39.620400Z"}
+{"request_id": "4f7bbc8a-0313-4c2d-a3cc-08b0491a3fad", "method": "GET", "path": "/health", "query_params": {}, "client_ip": "127.0.0.1", "user_agent": "Python-urllib/3.12", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:42.967831Z"}
+BEGIN (implicit)
+SELECT 1
+[cached since 2601s ago] ()
+ROLLBACK
+{"request_id": "4f7bbc8a-0313-4c2d-a3cc-08b0491a3fad", "method": "GET", "path": "/health", "status_code": 200, "duration_ms": 254.11, "content_length": "135", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:43.223722Z"}
+{"request_id": "18ae0c34-573d-4bf6-bb95-1e5651e9fc89", "method": "GET", "path": "/api/products", "query_params": {"size": "100"}, "client_ip": "172.20.0.1", "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:53.616309Z"}
+BEGIN (implicit)
+SELECT count(*) AS count_1 
+FROM (SELECT products.sku AS sku, products.name AS name, products.description AS description, products.category AS category, products.unit_price AS unit_price, products.unit_cost AS unit_cost, products.reorder_point AS reorder_point, products.is_active AS is_active, products.id AS id, products.created_at AS created_at, products.updated_at AS updated_at 
+FROM products 
+WHERE products.is_active ORDER BY products.created_at DESC) AS anon_1
+[cached since 2569s ago] ()
+SELECT products.sku, products.name, products.description, products.category, products.unit_price, products.unit_cost, products.reorder_point, products.is_active, products.id, products.created_at, products.updated_at 
+FROM products 
+WHERE products.is_active ORDER BY products.created_at DESC 
+ LIMIT $1::INTEGER OFFSET $2::INTEGER
+[cached since 2403s ago] (100, 0)
+ROLLBACK
+{"request_id": "18ae0c34-573d-4bf6-bb95-1e5651e9fc89", "method": "GET", "path": "/api/products", "status_code": 200, "duration_ms": 404.13, "content_length": "3554", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:54.028455Z"}
+{"request_id": "19d42a39-d043-4662-bba7-12d142605f31", "method": "GET", "path": "/api/inventory", "query_params": {}, "client_ip": "172.20.0.1", "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:57.073363Z"}
+BEGIN (implicit)
+SELECT inventory.product_id, inventory.warehouse_id, inventory.quantity, inventory.reserved_qty, inventory.id, inventory.created_at, inventory.updated_at, products.sku, products.name, products.description, products.category, products.unit_price, products.unit_cost, products.reorder_point, products.is_active, products.id AS id_1, products.created_at AS created_at_1, products.updated_at AS updated_at_1, warehouses.code, warehouses.name AS name_1, warehouses.location, warehouses.is_active AS is_active_1, warehouses.id AS id_2, warehouses.created_at AS created_at_2, warehouses.updated_at AS updated_at_2 
+FROM inventory JOIN products ON inventory.product_id = products.id JOIN warehouses ON inventory.warehouse_id = warehouses.id 
+WHERE products.is_active
+[cached since 2572s ago] ()
+ROLLBACK
+{"request_id": "19d42a39-d043-4662-bba7-12d142605f31", "method": "GET", "path": "/api/inventory", "status_code": 200, "duration_ms": 593.29, "content_length": "7762", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:30:57.689126Z"}
+{"request_id": "3bc63425-8f17-4b53-9d98-fe4ef8f0a068", "method": "GET", "path": "/health", "query_params": {}, "client_ip": "127.0.0.1", "user_agent": "Python-urllib/3.12", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:31:14.006309Z"}
+BEGIN (implicit)
+SELECT 1
+[cached since 2632s ago] ()
+ROLLBACK
+{"request_id": "3bc63425-8f17-4b53-9d98-fe4ef8f0a068", "method": "GET", "path": "/health", "status_code": 200, "duration_ms": 135.81, "content_length": "135", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:31:14.148477Z"}
+{"request_id": "4a578fd2-e3f9-44d1-9a3b-e90fd752e216", "method": "GET", "path": "/api/inventory", "query_params": {}, "client_ip": "172.20.0.1", "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:31:42.298659Z"}
+BEGIN (implicit)
+SELECT inventory.product_id, inventory.warehouse_id, inventory.quantity, inventory.reserved_qty, inventory.id, inventory.created_at, inventory.updated_at, products.sku, products.name, products.description, products.category, products.unit_price, products.unit_cost, products.reorder_point, products.is_active, products.id AS id_1, products.created_at AS created_at_1, products.updated_at AS updated_at_1, warehouses.code, warehouses.name AS name_1, warehouses.location, warehouses.is_active AS is_active_1, warehouses.id AS id_2, warehouses.created_at AS created_at_2, warehouses.updated_at AS updated_at_2 
+FROM inventory JOIN products ON inventory.product_id = products.id JOIN warehouses ON inventory.warehouse_id = warehouses.id 
+WHERE products.is_active
+[cached since 2618s ago] ()
+ROLLBACK
+{"request_id": "4a578fd2-e3f9-44d1-9a3b-e90fd752e216", "method": "GET", "path": "/api/inventory", "status_code": 200, "duration_ms": 1673.26, "content_length": "7762", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:31:44.041181Z"}
+{"request_id": "526fffd2-30e7-4386-819a-d8572403b7d9", "method": "GET", "path": "/health", "query_params": {}, "client_ip": "127.0.0.1", "user_agent": "Python-urllib/3.12", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:31:47.143806Z"}
+BEGIN (implicit)
+SELECT 1
+[cached since 2665s ago] ()
+ROLLBACK
+{"request_id": "526fffd2-30e7-4386-819a-d8572403b7d9", "method": "GET", "path": "/health", "status_code": 200, "duration_ms": 677.34, "content_length": "135", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:31:47.836857Z"}
+{"request_id": "98262a11-4346-4713-9855-d318c794b1a4", "method": "GET", "path": "/health", "query_params": {}, "client_ip": "127.0.0.1", "user_agent": "Python-urllib/3.12", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:32:32.285547Z"}
+BEGIN (implicit)
+SELECT 1
+[cached since 2713s ago] ()
+ROLLBACK
+{"request_id": "98262a11-4346-4713-9855-d318c794b1a4", "method": "GET", "path": "/health", "status_code": 200, "duration_ms": 5656.12, "content_length": "134", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:32:38.468656Z"}
+{"request_id": "058fbaf3-1a76-4a5b-8606-03b0ff9d66fd", "method": "GET", "path": "/health", "query_params": {}, "client_ip": "127.0.0.1", "user_agent": "Python-urllib/3.12", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:32:59.276910Z"}
+BEGIN (implicit)
+SELECT 1
+[cached since 2737s ago] ()
+ROLLBACK
+{"request_id": "058fbaf3-1a76-4a5b-8606-03b0ff9d66fd", "method": "GET", "path": "/health", "status_code": 200, "duration_ms": 717.22, "content_length": "135", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:33:00.027048Z"}
+{"request_id": "2c46c3e9-e38a-47b0-98b6-197dacf6bf3c", "method": "GET", "path": "/health", "query_params": {}, "client_ip": "127.0.0.1", "user_agent": "Python-urllib/3.12", "event": "request.started", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:33:31.580014Z"}
+BEGIN (implicit)
+SELECT 1
+[cached since 2769s ago] ()
+ROLLBACK
+{"request_id": "2c46c3e9-e38a-47b0-98b6-197dacf6bf3c", "method": "GET", "path": "/health", "status_code": 200, "duration_ms": 330.65, "content_length": "134", "event": "request.completed", "logger": "api.request", "level": "info", "timestamp": "2026-06-26T12:33:31.933298Z"}
