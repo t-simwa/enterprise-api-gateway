@@ -50,7 +50,8 @@ export function Header() {
         </Link>
       </div>
 
-      <div className="hidden md:flex items-center gap-2 text-[13px]">
+      <div className="hidden md:flex items-center gap-0 text-[13px]">
+        <SidebarTrigger className="-ml-2 mr-1 data-[state=collapsed]:rotate-180" />
         <button className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-muted/60 text-foreground">
           <span className="font-medium">Acme Inc.</span>
           <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />

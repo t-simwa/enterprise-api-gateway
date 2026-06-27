@@ -43,7 +43,7 @@ export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <SidebarRoot>
+    <SidebarRoot collapsible="icon">
       <SidebarHeader className="flex h-14 items-center gap-2 border-b border-border px-4">
         <BrandMark className="h-4 w-4" />
         <span className="text-sm font-semibold tracking-tight">Gateway</span>
@@ -59,7 +59,7 @@ export function Sidebar() {
               const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
               return (
                 <SidebarMenuItem key={to}>
-                  <SidebarMenuButton asChild isActive={active}>
+                  <SidebarMenuButton asChild isActive={active} tooltip={label}>
                     <Link to={to}>
                       <Icon />
                       <span>{label}</span>
@@ -77,7 +77,7 @@ export function Sidebar() {
               const active = pathname.startsWith(to);
               return (
                 <SidebarMenuItem key={to}>
-                  <SidebarMenuButton asChild isActive={active}>
+                  <SidebarMenuButton asChild isActive={active} tooltip={label}>
                     <Link to={to}>
                       <Icon />
                       <span>{label}</span>
@@ -93,7 +93,7 @@ export function Sidebar() {
           <SidebarMenu>
             {RESOURCES.map(({ href, label, icon: Icon }) => (
               <SidebarMenuItem key={href}>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild tooltip={label}>
                   <a href={href} target="_blank" rel="noreferrer">
                     <Icon />
                     <span>{label}</span>

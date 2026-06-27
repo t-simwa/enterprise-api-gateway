@@ -133,12 +133,15 @@ This starts all 6 services:
 
 ```bash
 # Backend
+cd backend
 python -m venv venv
 source venv/Scripts/activate   # Windows
 # source venv/bin/activate     # Linux/Mac
 pip install -r requirements.txt
-docker compose up -d db redis  # Start only DB + Redis
-uvicorn src.main:app --reload --host 127.0.0.1 --port 8000
+# From project root, start only DB + Redis:
+docker compose up -d db redis
+# Start backend from backend/ directory:
+cd backend && uvicorn src.main:app --reload --host 127.0.0.1 --port 8000
 
 # Frontend (separate terminal)
 cd frontend
@@ -189,19 +192,19 @@ Interactive API documentation is available at `/docs` (Swagger UI) and `/redoc` 
 
 ```bash
 # Backend tests (84 tests)
-pytest --cov=src --cov-report=term-missing --cov-report=html
+cd backend && pytest --cov=src --cov-report=term-missing --cov-report=html
 
-# Frontend tests (9 tests)
+# Frontend tests (47 tests)
 cd frontend && npm test
 
 # Frontend E2E tests (Playwright)
 cd frontend && npm run e2e
 
-# Lint
-ruff check src/
+# Backend lint
+cd backend && ruff check src/
 
-# Type check
-mypy src/
+# Backend type check
+cd backend && mypy src/
 ```
 
 ## Engineering Challenges Overcome
@@ -239,29 +242,31 @@ Configuration:
 
 ```
 enterprise-api-gateway/
-├── src/                    # Backend application
-│   ├── api/                # Route handlers
-│   ├── middleware/          # Request ID, logging, metrics, sanitization
-│   ├── models/             # SQLAlchemy ORM models (8 tables)
-│   ├── schemas/            # Pydantic request/response schemas
-│   ├── services/           # Business logic layer
-│   ├── main.py             # FastAPI app entry point
-│   ├── config.py           # Pydantic Settings
-│   ├── database.py         # Async SQLAlchemy engine
-│   ├── exceptions.py       # Custom exceptions
-│   ├── seed.py             # Database seed script
-│   └── celery_app.py       # Celery worker config
+├── backend/                # Python backend application
+│   ├── src/                # FastAPI source code
+│   │   ├── api/            # Route handlers
+│   │   ├── middleware/     # Request ID, logging, metrics, sanitization
+│   │   ├── models/         # SQLAlchemy ORM models (8 tables)
+│   │   ├── schemas/        # Pydantic request/response schemas
+│   │   ├── services/       # Business logic layer
+│   │   ├── main.py         # FastAPI app entry point
+│   │   ├── config.py       # Pydantic Settings
+│   │   ├── database.py     # Async SQLAlchemy engine
+│   │   ├── exceptions.py   # Custom exceptions
+│   │   ├── seed.py         # Database seed script
+│   │   └── celery_app.py   # Celery worker config
+│   ├── tests/              # 84 backend tests
+│   ├── alembic/            # Database migrations
+│   ├── scripts/            # Utility scripts
+│   ├── Dockerfile          # Backend Docker image
+│   └── pyproject.toml      # Python project config
 ├── frontend/               # React admin dashboard
 │   ├── src/routes/         # TanStack Router pages
 │   ├── src/components/     # UI components (shadcn/ui)
 │   └── src/lib/            # API client, types, auth
-├── tests/                  # 84 backend tests
-├── alembic/                # Database migrations
 ├── nginx/                  # Production reverse proxy config
-├── scripts/                # Utility scripts
 ├── postman/                # Postman collection
 ├── docker-compose.yml      # Multi-service orchestration
-├── Dockerfile              # Backend Docker image
 └── .github/workflows/      # CI/CD pipeline
 ```
 
