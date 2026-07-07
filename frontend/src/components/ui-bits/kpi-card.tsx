@@ -15,7 +15,7 @@ export function KpiCard({ label, value, delta, hint, loading, spark }: Props) {
   const neutral = (delta ?? 0) === 0;
 
   return (
-    <div className="group relative rounded-lg border border-border bg-card p-5 transition-colors hover:border-foreground/25">
+    <div className="group relative rounded-lg border border-border bg-card p-5 transition-colors hover:border-foreground/25 min-w-0 overflow-hidden">
       <div className="flex items-start justify-between">
         <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
           {label}
@@ -71,7 +71,7 @@ function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
   const area = `${d} L${w},${h} L0,${h} Z`;
   const stroke = positive ? "var(--color-success)" : "var(--color-destructive)";
   return (
-    <svg width={w} height={h} className="overflow-visible" aria-hidden>
+    <svg width={w} height={h} className="overflow-visible shrink-0" aria-hidden>
       <path d={area} fill={stroke} fillOpacity={0.08} />
       <path d={d} fill="none" stroke={stroke} strokeWidth={1.25} strokeLinecap="round" />
     </svg>
