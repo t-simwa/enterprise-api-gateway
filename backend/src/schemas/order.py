@@ -38,6 +38,13 @@ class OrderItemResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TimelineEvent(BaseModel):
+    status: str
+    timestamp: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class OrderResponse(BaseModel):
     id: UUID
     order_number: str
@@ -48,6 +55,7 @@ class OrderResponse(BaseModel):
     notes: str | None
     items: list[OrderItemResponse]
     items_count: int
+    timeline: list[TimelineEvent]
     created_at: datetime
     updated_at: datetime
 

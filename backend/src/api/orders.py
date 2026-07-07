@@ -20,6 +20,7 @@ from src.schemas.order import (
     OrderItemResponse,
     OrderResponse,
     OrderStatusUpdate,
+    TimelineEvent,
 )
 from src.services.order_service import OrderService
 
@@ -48,8 +49,12 @@ def _build_order_response(order: Order) -> OrderResponse:
             for item in order.items
         ],
         items_count=len(order.items),
+        timeline=[
+            TimelineEvent(status=e.to_status, timestamp=e.created_at)
+            for e in sorted(order.events, key=lambda x: x.created_at)
+        ],
         created_at=order.created_at,
-        updated_at=order.created_at,
+        updated_at=order.updated_at,
     )
 
 

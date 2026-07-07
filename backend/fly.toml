@@ -1,0 +1,27 @@
+app = "enterprise-api-gateway-api"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  ENVIRONMENT = "production"
+  LOG_LEVEL = "INFO"
+  ACCESS_TOKEN_EXPIRE_MINUTES = "30"
+  REFRESH_TOKEN_EXPIRE_DAYS = "7"
+  JWT_ALGORITHM = "HS256"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
+
+[[services.ports]]
+  handlers = ["http"]
+  port = 80
+
+[[services.ports]]
+  handlers = ["tls", "http"]
+  port = 443
