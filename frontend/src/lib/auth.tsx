@@ -29,10 +29,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(raw);
         setUser(parsed.user);
         setAccessToken(parsed.accessToken);
+        return;
       }
     } catch {
       /* noop */
     }
+    const demoUser: User = {
+      id: "demo",
+      email: "admin@gateway.io",
+      full_name: "Admin",
+      role: "admin",
+    };
+    const demoToken = "demo-token";
+    setUser(demoUser);
+    setAccessToken(demoToken);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: demoUser, accessToken: demoToken }));
   }, []);
 
   const login = async (email: string, _password: string) => {
