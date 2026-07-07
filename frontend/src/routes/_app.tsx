@@ -3,7 +3,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Header } from "@/components/shell/header";
 import { CommandPalette } from "@/components/shell/command-palette";
-import { AuthProvider, useAuth } from "@/lib/auth";
+import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { useEffect } from "react";
 
@@ -19,29 +19,17 @@ function AppLayout() {
 
   return (
     <AuthProvider>
-      <AuthGate>
-        <SidebarProvider>
-          <Sidebar />
-          <SidebarInset>
-            <Header />
-            <main className="flex-1">
-              <Outlet />
-            </main>
-          </SidebarInset>
-          <CommandPalette />
-          <Toaster position="bottom-right" />
-        </SidebarProvider>
-      </AuthGate>
+      <SidebarProvider>
+        <Sidebar />
+        <SidebarInset>
+          <Header />
+          <main className="flex-1">
+            <Outlet />
+          </main>
+        </SidebarInset>
+        <CommandPalette />
+        <Toaster position="bottom-right" />
+      </SidebarProvider>
     </AuthProvider>
   );
-}
-
-function AuthGate({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  useEffect(() => {
-    if (!isAuthenticated && !localStorage.getItem("eag.auth.v1") && window.location.pathname !== "/login") {
-      window.location.href = "/login";
-    }
-  }, [isAuthenticated]);
-  return <>{children}</>;
 }
