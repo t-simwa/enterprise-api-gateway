@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   Command,
   CommandDialog,
@@ -26,6 +27,8 @@ import {
   Plus,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { api, formatUSD } from "@/lib/api";
+import { StatusBadge } from "@/components/ui-bits/status-badge";
 
 void Command;
 
@@ -40,8 +43,12 @@ const NAV = [
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { data: orders } = useQuery({ queryKey: ["orders"], queryFn: api.allOrders });
+  const { data: products } = useQuery({ queryKey: ["products"], queryFn: api.products });
+  const { data: inventory } = useQuery({ queryKey: ["inventory"], queryFn: api.inventory });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -55,9 +62,18 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    if (!open) setQuery("");
+  }, [open]);
+
   const go = (to: string) => {
     setOpen(false);
     navigate({ to });
+  };
+
+  const goWithDetail = (to: string, detailId: string) => {
+    setOpen(false);
+    navigate({ to, state: { detailId } as unknown as Record<string, unknown> });
   };
 
   const toggleTheme = () => {
@@ -69,7 +85,11 @@ export function CommandPalette() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Type a command or search…" />
+      <CommandInput
+        placeholder="Type a command or search…"
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList>
         <CommandEmpty>No results.</CommandEmpty>
         <CommandGroup heading="Navigate">
@@ -98,19 +118,61 @@ export function CommandPalette() {
             <span>Sign out</span>
           </CommandItem>
         </CommandGroup>
+
+        {query && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Orders">
+              {orders?.map((o) => (
+                <CommandItem key={o.id} onSelect={() => goWithDetail("/orders", o.id)}>
+                  <ShoppingCart className="size-4" />
+                  <span>{o.order_number}</span>
+                  <span className="text-muted-foreground text-xs ml-1.5">{o.customer_name}</span>
+                  <span className="ml-auto">
+                    <StatusBadge status={o.status} />
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandGroup heading="Products">
+              {products?.map((p) => (
+                <CommandItem key={p.id} onSelect={() => goWithDetail("/products", p.id)}>
+                  <Package className="size-4" />
+                  <span>{p.name}</span>
+                  <span className="text-muted-foreground text-xs ml-2">{p.sku}</span>
+                  <span className="ml-auto text-xs font-mono tabular-nums text-muted-foreground">
+                    {formatUSD(p.unit_price)}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandGroup heading="Inventory">
+              {inventory?.map((i) => (
+                <CommandItem key={`${i.product_id}-${i.warehouse}`} onSelect={() => goWithDetail("/inventory", i.product_id)}>
+                  <Warehouse className="size-4" />
+                  <span>{i.name}</span>
+                  <span className="text-muted-foreground text-xs ml-2">{i.warehouse}</span>
+                  <span className="ml-auto flex items-center gap-1.5">
+                    <span
+                      className={`size-1.5 rounded-full ${i.available <= 5 ? "bg-[var(--color-destructive)]" : "bg-[var(--color-success)]"}`}
+                    />
+                    <span className="font-mono text-xs tabular-nums">{i.available} avail.</span>
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
         <CommandSeparator />
         <CommandGroup heading="Help">
-          <CommandItem onSelect={() => window.open("https://docs.example.com", "_blank")}>
+          <CommandItem onSelect={() => go("/docs")}>
             <BookOpen />
             <span>Documentation</span>
           </CommandItem>
-          <CommandItem onSelect={() => window.open("mailto:support@example.com", "_blank")}>
+          <CommandItem onSelect={() => go("/support")}>
             <LifeBuoy />
             <span>Contact support</span>
-          </CommandItem>
-          <CommandItem onSelect={toggleTheme}>
-            <Moon />
-            <span>Dark mode</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>
