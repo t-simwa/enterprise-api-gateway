@@ -13,6 +13,7 @@ COPY src/ src/
 COPY alembic/ alembic/
 COPY alembic.ini .
 COPY pyproject.toml .
+RUN mkdir -p /app/logs
 
 ENV PATH=/root/.local/bin:$PATH
 EXPOSE 8000
