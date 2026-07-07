@@ -10,7 +10,7 @@
 [![Coverage](https://img.shields.io/badge/Coverage-90%25+-success)](https://coverage.readthedocs.io)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-Enterprise-grade inventory and order management system with real-time stock tracking across multiple warehouses. Built with FastAPI async backend, PostgreSQL, Redis, and a React admin dashboard with shadcn/ui.
+Enterprise-grade inventory and order management system with real-time stock tracking across multiple warehouses. Built with FastAPI async backend, PostgreSQL, Redis, and a feature-rich React admin dashboard with shadcn/ui — including interactive charts, command palette, embedded documentation, org/region switcher, and fully responsive mobile layout.
 
 ## Architecture
 
@@ -84,6 +84,19 @@ Enterprise-grade inventory and order management system with real-time stock trac
 - Security headers (HSTS, CSP, X-Frame-Options)
 - Input sanitization middleware
 - Request ID tracing on every response
+
+### Admin Dashboard
+- **Responsive layout** — mobile-optimized sidebar with auto-collapse, full-screen detail sheets, icon-only search and region selector on small screens
+- **Command palette** — ⌘K quick navigation across all routes with fuzzy search and keyboard shortcuts
+- **Interactive charts** — revenue area chart with 1D/7D/30D/90D range filters; analytics page with bar + pie charts; mobile tooltip and tap highlighting support
+- **KPI cards** — sparkline-backed metric cards for revenue, orders, processing time, and low-stock count
+- **Order & product detail sheets** — slide-over panels with customer info, line items, timeline, and warehouse inventory breakdown
+- **Notifications center** — grouped by time (Today/Yesterday/Older), localStorage persisted, unread badge counter, mark-as-read on click
+- **Org & region switcher** — multi-tenant org selector (Enterprise/Free/Pro), region selector with simulated latency measurement, both persisted to localStorage
+- **Embedded documentation** — full docs pages (getting started, orders, products, inventory, API reference) with mobile sidebar, search, and prev/next navigation
+- **Support page** — FAQ accordion and contact form with toast feedback
+- **Dark mode** — default dark theme with toggle, no flash on load
+- **Theme toggle** — sun/moon icon switch persisted to localStorage
 
 ### Observability
 - Structured JSON logging with structlog
@@ -260,10 +273,14 @@ enterprise-api-gateway/
 │   ├── scripts/            # Utility scripts
 │   ├── Dockerfile          # Backend Docker image
 │   └── pyproject.toml      # Python project config
-├── frontend/               # React admin dashboard
-│   ├── src/routes/         # TanStack Router pages
-│   ├── src/components/     # UI components (shadcn/ui)
-│   └── src/lib/            # API client, types, auth
+├── frontend/               # React admin dashboard (React 19, TanStack Router, shadcn/ui, Recharts)
+│   ├── src/routes/         # TanStack Router pages (orders, products, inventory, analytics, docs, support)
+│   ├── src/components/     # UI components (sidebar, header, sheets, charts, docs, shell)
+│   │   ├── shell/          # App shell (sidebar, header, command palette, notifications)
+│   │   ├── docs/           # Doc sidebar, page shell, feedback widget
+│   │   ├── ui-bits/        # KPI cards, status badges, order/product detail sheets
+│   │   └── ui/             # shadcn/ui primitives (button, sheet, tooltip, sidebar, etc.)
+│   └── src/lib/            # API client, types, auth, mock data layer
 ├── nginx/                  # Production reverse proxy config
 ├── postman/                # Postman collection
 ├── docker-compose.yml      # Multi-service orchestration
