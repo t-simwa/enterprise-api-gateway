@@ -13,7 +13,13 @@ DATABASE_URL = settings.DATABASE_URL.replace(
     "postgresql://", "postgresql+asyncpg://"
 )
 
-engine = create_async_engine(DATABASE_URL, echo=settings.ENVIRONMENT == "development")
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=settings.ENVIRONMENT == "development",
+    pool_size=3,
+    max_overflow=0,
+    pool_pre_ping=True,
+)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
