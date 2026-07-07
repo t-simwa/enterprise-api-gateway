@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import {
-  Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Sector, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { api, formatUSD } from "@/lib/api";
 
@@ -18,9 +19,23 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "var(--color-chart-4)",
 };
 
+const tooltipContent = {
+  background: "var(--color-popover)",
+  border: "1px solid var(--color-border)",
+  borderRadius: 6,
+  fontSize: 13,
+};
+
+const tooltipWrapper = {
+  maxWidth: "calc(100vw - 2rem)",
+  outline: "none",
+};
+
 function AnalyticsPage() {
   const { data: kpi } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
-  const { data: series } = useQuery({ queryKey: ["revenue"], queryFn: api.revenueSeries });
+  const { data: series } = useQuery({ queryKey: ["revenue", 30], queryFn: () => api.revenueSeries(30) });
+  const [activeBar, setActiveBar] = useState<number | undefined>(undefined);
+  const [activePie, setActivePie] = useState<number | undefined>(undefined);
 
   const pie = Object.entries(kpi?.orders_by_status ?? {}).map(([name, value]) => ({
     name,
@@ -42,15 +57,28 @@ function AnalyticsPage() {
           </div>
           <div className="h-80 p-3">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={series ?? []}>
+              <BarChart data={series ?? []} onMouseLeave={() => setActiveBar(undefined)}>
                 <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="date" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => v.slice(5)} />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
-                  contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 6, fontSize: 12 }}
+                  contentStyle={tooltipContent}
+                  wrapperStyle={tooltipWrapper}
                   formatter={(v: number) => [formatUSD(v), "Revenue"]}
                 />
-                <Bar dataKey="revenue" fill="var(--color-chart-1)" radius={[3, 3, 0, 0]} />
+                <Bar
+                  dataKey="revenue"
+                  fill="var(--color-chart-1)"
+                  radius={[3, 3, 0, 0]}
+                  className="cursor-pointer"
+                  activeBar={{
+                    fill: "var(--color-chart-1)",
+                    stroke: "var(--color-ring)",
+                    strokeWidth: 1.5,
+                    radius: 3,
+                  }}
+                  onMouseEnter={(_, index) => setActiveBar(index)}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -63,14 +91,37 @@ function AnalyticsPage() {
           </div>
           <div className="h-64 p-3">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={pie} dataKey="value" nameKey="name" innerRadius={48} outerRadius={80} stroke="var(--color-background)" strokeWidth={2}>
+              <PieChart onMouseLeave={() => setActivePie(undefined)}>
+                <Pie
+                  data={pie}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={48}
+                  outerRadius={80}
+                  stroke="var(--color-background)"
+                  strokeWidth={2}
+                  className="cursor-pointer"
+                  activeIndex={activePie}
+                  activeShape={(props: unknown) => {
+                    const p = props as Record<string, unknown>;
+                    return (
+                      <Sector
+                        {...p}
+                        outerRadius={(p.outerRadius as number) + 10}
+                        stroke="var(--color-ring)"
+                        strokeWidth={1.5}
+                      />
+                    );
+                  }}
+                  onMouseEnter={(_, index) => setActivePie(index)}
+                >
                   {pie.map((p) => (
                     <Cell key={p.name} fill={STATUS_COLORS[p.name] ?? "var(--color-chart-1)"} />
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 6, fontSize: 12 }}
+                  contentStyle={tooltipContent}
+                  wrapperStyle={tooltipWrapper}
                 />
               </PieChart>
             </ResponsiveContainer>
