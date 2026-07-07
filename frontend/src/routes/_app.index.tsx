@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -14,6 +15,8 @@ import { ArrowRight, Activity, AlertTriangle } from "lucide-react";
 import { api, formatNum, formatUSD, isMock, sparkSeries } from "@/lib/api";
 import { KpiCard } from "@/components/ui-bits/kpi-card";
 import { StatusBadge } from "@/components/ui-bits/status-badge";
+import { OrderDetailSheet } from "@/components/ui-bits/order-detail-sheet";
+import { ProductDetailSheet } from "@/components/ui-bits/product-detail-sheet";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -25,14 +28,28 @@ export const Route = createFileRoute("/_app/")({
   component: Dashboard,
 });
 
+const RANGES = [1, 7, 30, 90] as const;
+
 function Dashboard() {
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: api.dashboard,
   });
-  const { data: series } = useQuery({ queryKey: ["revenue"], queryFn: api.revenueSeries });
+  const [range, setRange] = useState(30);
+  const { data: series } = useQuery({
+    queryKey: ["revenue", range],
+    queryFn: () => api.revenueSeries(range),
+  });
   const { data: orders } = useQuery({ queryKey: ["recent-orders"], queryFn: () => api.recentOrders(8) });
   const { data: lowStock } = useQuery({ queryKey: ["low-stock"], queryFn: api.lowStock });
+
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [productDetailId, setProductDetailId] = useState<string | null>(null);
+  const routerState = useRouterState({ select: (s) => s.location.state as { detailId?: string } | null });
+
+  useEffect(() => {
+    if (routerState?.detailId) setDetailId(routerState.detailId);
+  }, [routerState?.detailId]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10 space-y-10">
@@ -53,9 +70,7 @@ function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 h-8 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/40">
-            Last 30 days
-          </button>
+          <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">{range}D view</span>
           <Link
             to="/orders"
             className="inline-flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-3 h-8 text-[13px] font-medium hover:opacity-90"
@@ -104,29 +119,30 @@ function Dashboard() {
 
       {/* Chart + low stock */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 rounded-lg border border-border bg-card">
+        <div className="lg:col-span-2 rounded-lg border border-border bg-card overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <div>
               <h2 className="text-sm font-semibold">Revenue</h2>
-              <p className="text-xs text-muted-foreground">Trailing 30 days</p>
+              <p className="text-xs text-muted-foreground">Trailing {range} days</p>
             </div>
             <div className="flex items-center gap-1 text-xs">
-              {["1D", "7D", "30D", "90D"].map((t, i) => (
+              {RANGES.map((d) => (
                 <button
-                  key={t}
+                  key={d}
+                  onClick={() => setRange(d)}
                   className={
-                    "rounded px-2 py-1 " +
-                    (i === 2
+                    "rounded px-2 py-1 cursor-pointer " +
+                    (d === range
                       ? "bg-muted text-foreground"
                       : "text-muted-foreground hover:text-foreground")
                   }
                 >
-                  {t}
+                  {d}D
                 </button>
               ))}
             </div>
           </div>
-          <div className="h-72 p-3">
+          <div className="h-72 p-3 min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={series ?? []}>
                 <defs>
@@ -184,7 +200,7 @@ function Dashboard() {
           </div>
           <ul className="divide-y divide-border">
             {(lowStock ?? []).slice(0, 6).map((item) => (
-              <li key={item.product_id + item.sku} className="flex items-center justify-between px-5 py-3 text-sm">
+              <li key={item.product_id + item.sku} className="flex items-center justify-between px-5 py-3 text-sm cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setProductDetailId(item.product_id)}>
                 <div className="min-w-0">
                   <div className="truncate font-medium">{item.name}</div>
                   <div className="text-xs text-muted-foreground font-mono">{item.sku}</div>
@@ -226,7 +242,7 @@ function Dashboard() {
             </thead>
             <tbody className="divide-y divide-border">
               {(orders ?? []).map((o) => (
-                <tr key={o.id} className="hover:bg-muted/30 transition-colors">
+                <tr key={o.id} className="hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => setDetailId(o.id)}>
                   <td className="px-5 py-3 font-mono text-xs">{o.order_number}</td>
                   <td className="px-5 py-3 truncate max-w-[140px] lg:max-w-none">{o.customer_name}</td>
                   <td className="px-5 py-3"><StatusBadge status={o.status} /></td>
@@ -244,7 +260,7 @@ function Dashboard() {
         {/* ── Mobile cards ── */}
         <div className="md:hidden divide-y divide-border">
           {(orders ?? []).map((o) => (
-            <div key={o.id} className="px-5 py-3">
+            <div key={o.id} className="px-5 py-3 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setDetailId(o.id)}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-mono text-xs text-muted-foreground">{o.order_number}</div>
@@ -267,6 +283,9 @@ function Dashboard() {
           ))}
         </div>
       </section>
+
+      <OrderDetailSheet orderId={detailId} open={!!detailId} onOpenChange={(o) => { if (!o) setDetailId(null); }} />
+      <ProductDetailSheet productId={productDetailId} open={!!productDetailId} onOpenChange={(o) => { if (!o) setProductDetailId(null); }} />
     </div>
   );
 }

@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { api, formatUSD } from "@/lib/api";
 import { StatusBadge } from "@/components/ui-bits/status-badge";
+import { ProductDetailSheet } from "@/components/ui-bits/product-detail-sheet";
 import { ProductFormDialog } from "@/components/forms/product-form";
 
 export const Route = createFileRoute("/_app/products")({
@@ -14,6 +15,12 @@ export const Route = createFileRoute("/_app/products")({
 function ProductsPage() {
   const { data, isLoading } = useQuery({ queryKey: ["products"], queryFn: api.products });
   const [productFormOpen, setProductFormOpen] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const routerState = useRouterState({ select: (s) => s.location.state as { detailId?: string } | null });
+
+  useEffect(() => {
+    if (routerState?.detailId) setDetailId(routerState.detailId);
+  }, [routerState?.detailId]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
@@ -40,7 +47,8 @@ function ProductsPage() {
         {(data ?? []).map((p) => (
           <article
             key={p.id}
-            className="group rounded-lg border border-border bg-card p-5 transition-colors hover:border-foreground/20"
+            className="group rounded-lg border border-border bg-card p-5 transition-colors hover:border-foreground/20 cursor-pointer"
+            onClick={() => setDetailId(p.id)}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -68,6 +76,7 @@ function ProductsPage() {
       </div>
 
       <ProductFormDialog open={productFormOpen} onOpenChange={setProductFormOpen} />
+      <ProductDetailSheet productId={detailId} open={!!detailId} onOpenChange={(o) => { if (!o) setDetailId(null); }} />
     </div>
   );
 }

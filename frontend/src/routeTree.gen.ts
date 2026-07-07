@@ -12,11 +12,19 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppSupportRouteImport } from './routes/_app.support'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProductsRouteImport } from './routes/_app.products'
 import { Route as AppOrdersRouteImport } from './routes/_app.orders'
 import { Route as AppInventoryRouteImport } from './routes/_app.inventory'
+import { Route as AppDocsRouteImport } from './routes/_app.docs'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
+import { Route as AppDocsIndexRouteImport } from './routes/_app.docs.index'
+import { Route as AppDocsProductsRouteImport } from './routes/_app.docs.products'
+import { Route as AppDocsOrdersRouteImport } from './routes/_app.docs.orders'
+import { Route as AppDocsInventoryRouteImport } from './routes/_app.docs.inventory'
+import { Route as AppDocsGettingStartedRouteImport } from './routes/_app.docs.getting-started'
+import { Route as AppDocsApiReferenceRouteImport } from './routes/_app.docs.api-reference'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -30,6 +38,11 @@ const AppRoute = AppRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSupportRoute = AppSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -52,20 +65,63 @@ const AppInventoryRoute = AppInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDocsRoute = AppDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
   getParentRoute: () => AppRoute,
+} as any)
+const AppDocsIndexRoute = AppDocsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppDocsRoute,
+} as any)
+const AppDocsProductsRoute = AppDocsProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AppDocsRoute,
+} as any)
+const AppDocsOrdersRoute = AppDocsOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AppDocsRoute,
+} as any)
+const AppDocsInventoryRoute = AppDocsInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => AppDocsRoute,
+} as any)
+const AppDocsGettingStartedRoute = AppDocsGettingStartedRouteImport.update({
+  id: '/getting-started',
+  path: '/getting-started',
+  getParentRoute: () => AppDocsRoute,
+} as any)
+const AppDocsApiReferenceRoute = AppDocsApiReferenceRouteImport.update({
+  id: '/api-reference',
+  path: '/api-reference',
+  getParentRoute: () => AppDocsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/docs': typeof AppDocsRouteWithChildren
   '/inventory': typeof AppInventoryRoute
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRoute
   '/settings': typeof AppSettingsRoute
+  '/support': typeof AppSupportRoute
+  '/docs/api-reference': typeof AppDocsApiReferenceRoute
+  '/docs/getting-started': typeof AppDocsGettingStartedRoute
+  '/docs/inventory': typeof AppDocsInventoryRoute
+  '/docs/orders': typeof AppDocsOrdersRoute
+  '/docs/products': typeof AppDocsProductsRoute
+  '/docs/': typeof AppDocsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -74,18 +130,33 @@ export interface FileRoutesByTo {
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRoute
   '/settings': typeof AppSettingsRoute
+  '/support': typeof AppSupportRoute
   '/': typeof AppIndexRoute
+  '/docs/api-reference': typeof AppDocsApiReferenceRoute
+  '/docs/getting-started': typeof AppDocsGettingStartedRoute
+  '/docs/inventory': typeof AppDocsInventoryRoute
+  '/docs/orders': typeof AppDocsOrdersRoute
+  '/docs/products': typeof AppDocsProductsRoute
+  '/docs': typeof AppDocsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/analytics': typeof AppAnalyticsRoute
+  '/_app/docs': typeof AppDocsRouteWithChildren
   '/_app/inventory': typeof AppInventoryRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/products': typeof AppProductsRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/support': typeof AppSupportRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/docs/api-reference': typeof AppDocsApiReferenceRoute
+  '/_app/docs/getting-started': typeof AppDocsGettingStartedRoute
+  '/_app/docs/inventory': typeof AppDocsInventoryRoute
+  '/_app/docs/orders': typeof AppDocsOrdersRoute
+  '/_app/docs/products': typeof AppDocsProductsRoute
+  '/_app/docs/': typeof AppDocsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -93,10 +164,18 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/analytics'
+    | '/docs'
     | '/inventory'
     | '/orders'
     | '/products'
     | '/settings'
+    | '/support'
+    | '/docs/api-reference'
+    | '/docs/getting-started'
+    | '/docs/inventory'
+    | '/docs/orders'
+    | '/docs/products'
+    | '/docs/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -105,17 +184,32 @@ export interface FileRouteTypes {
     | '/orders'
     | '/products'
     | '/settings'
+    | '/support'
     | '/'
+    | '/docs/api-reference'
+    | '/docs/getting-started'
+    | '/docs/inventory'
+    | '/docs/orders'
+    | '/docs/products'
+    | '/docs'
   id:
     | '__root__'
     | '/_app'
     | '/login'
     | '/_app/analytics'
+    | '/_app/docs'
     | '/_app/inventory'
     | '/_app/orders'
     | '/_app/products'
     | '/_app/settings'
+    | '/_app/support'
     | '/_app/'
+    | '/_app/docs/api-reference'
+    | '/_app/docs/getting-started'
+    | '/_app/docs/inventory'
+    | '/_app/docs/orders'
+    | '/_app/docs/products'
+    | '/_app/docs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -146,6 +240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/support': {
+      id: '/_app/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AppSupportRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -174,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInventoryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/docs': {
+      id: '/_app/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof AppDocsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/analytics': {
       id: '/_app/analytics'
       path: '/analytics'
@@ -181,24 +289,91 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/docs/': {
+      id: '/_app/docs/'
+      path: '/'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof AppDocsIndexRouteImport
+      parentRoute: typeof AppDocsRoute
+    }
+    '/_app/docs/products': {
+      id: '/_app/docs/products'
+      path: '/products'
+      fullPath: '/docs/products'
+      preLoaderRoute: typeof AppDocsProductsRouteImport
+      parentRoute: typeof AppDocsRoute
+    }
+    '/_app/docs/orders': {
+      id: '/_app/docs/orders'
+      path: '/orders'
+      fullPath: '/docs/orders'
+      preLoaderRoute: typeof AppDocsOrdersRouteImport
+      parentRoute: typeof AppDocsRoute
+    }
+    '/_app/docs/inventory': {
+      id: '/_app/docs/inventory'
+      path: '/inventory'
+      fullPath: '/docs/inventory'
+      preLoaderRoute: typeof AppDocsInventoryRouteImport
+      parentRoute: typeof AppDocsRoute
+    }
+    '/_app/docs/getting-started': {
+      id: '/_app/docs/getting-started'
+      path: '/getting-started'
+      fullPath: '/docs/getting-started'
+      preLoaderRoute: typeof AppDocsGettingStartedRouteImport
+      parentRoute: typeof AppDocsRoute
+    }
+    '/_app/docs/api-reference': {
+      id: '/_app/docs/api-reference'
+      path: '/api-reference'
+      fullPath: '/docs/api-reference'
+      preLoaderRoute: typeof AppDocsApiReferenceRouteImport
+      parentRoute: typeof AppDocsRoute
+    }
   }
 }
 
+interface AppDocsRouteChildren {
+  AppDocsApiReferenceRoute: typeof AppDocsApiReferenceRoute
+  AppDocsGettingStartedRoute: typeof AppDocsGettingStartedRoute
+  AppDocsInventoryRoute: typeof AppDocsInventoryRoute
+  AppDocsOrdersRoute: typeof AppDocsOrdersRoute
+  AppDocsProductsRoute: typeof AppDocsProductsRoute
+  AppDocsIndexRoute: typeof AppDocsIndexRoute
+}
+
+const AppDocsRouteChildren: AppDocsRouteChildren = {
+  AppDocsApiReferenceRoute: AppDocsApiReferenceRoute,
+  AppDocsGettingStartedRoute: AppDocsGettingStartedRoute,
+  AppDocsInventoryRoute: AppDocsInventoryRoute,
+  AppDocsOrdersRoute: AppDocsOrdersRoute,
+  AppDocsProductsRoute: AppDocsProductsRoute,
+  AppDocsIndexRoute: AppDocsIndexRoute,
+}
+
+const AppDocsRouteWithChildren =
+  AppDocsRoute._addFileChildren(AppDocsRouteChildren)
+
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppDocsRoute: typeof AppDocsRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppProductsRoute: typeof AppProductsRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppSupportRoute: typeof AppSupportRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
+  AppDocsRoute: AppDocsRouteWithChildren,
   AppInventoryRoute: AppInventoryRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppProductsRoute: AppProductsRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppSupportRoute: AppSupportRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

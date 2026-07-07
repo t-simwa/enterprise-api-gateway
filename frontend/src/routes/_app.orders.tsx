@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Search, Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Plus, ExternalLink } from "lucide-react";
 import { api, formatUSD } from "@/lib/api";
 import { StatusBadge } from "@/components/ui-bits/status-badge";
+import { OrderDetailSheet } from "@/components/ui-bits/order-detail-sheet";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,12 @@ function OrdersPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
   const [q, setQ] = useState("");
   const [orderFormOpen, setOrderFormOpen] = useState(false);
+  const routerState = useRouterState({ select: (s) => s.location.state as { detailId?: string } | null });
+  const [detailId, setDetailId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (routerState?.detailId) setDetailId(routerState.detailId);
+  }, [routerState?.detailId]);
 
   const filtered = useMemo(() => {
     let rows = data ?? [];
@@ -119,16 +126,23 @@ function OrdersPage() {
                   </tr>
                 ))}
               {filtered.map((o) => (
-                <tr key={o.id} className="hover:bg-muted/30">
+                <tr
+                  key={o.id}
+                  className="hover:bg-muted/30 cursor-pointer"
+                  onClick={() => setDetailId(o.id)}
+                >
                   <td className="px-5 py-3 font-mono text-xs">{o.order_number}</td>
                   <td className="px-5 py-3 truncate max-w-[140px] lg:max-w-none">{o.customer_name}</td>
                   <td className="px-5 py-3"><StatusBadge status={o.status} /></td>
                   <td className="px-5 py-3 text-right font-mono hidden sm:table-cell">{o.items_count}</td>
                   <td className="px-5 py-3 text-right font-mono">{formatUSD(o.total_amount)}</td>
                   <td className="px-5 py-3 text-right text-xs text-muted-foreground hidden lg:table-cell">
-                    {new Date(o.created_at).toLocaleString(undefined, {
-                      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-                    })}
+                    <span className="inline-flex items-center gap-1">
+                      {new Date(o.created_at).toLocaleString(undefined, {
+                        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                      })}
+                      <ExternalLink className="size-3 ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -154,7 +168,11 @@ function OrdersPage() {
             </div>
           ))}
         {filtered.map((o) => (
-          <div key={o.id} className="rounded-lg border border-border bg-card p-4">
+          <div
+            key={o.id}
+            className="rounded-lg border border-border bg-card p-4 cursor-pointer hover:border-foreground/20 transition-colors"
+            onClick={() => setDetailId(o.id)}
+          >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="font-mono text-xs text-muted-foreground">{o.order_number}</div>
@@ -183,6 +201,7 @@ function OrdersPage() {
       </div>
 
       <OrderFormDialog open={orderFormOpen} onOpenChange={setOrderFormOpen} />
+      <OrderDetailSheet orderId={detailId} open={!!detailId} onOpenChange={(o) => { if (!o) setDetailId(null); }} />
     </div>
   );
 }

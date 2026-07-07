@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { ProductDetailSheet } from "@/components/ui-bits/product-detail-sheet";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/_app/inventory")({
 function InventoryPage() {
   const { data, isLoading } = useQuery({ queryKey: ["inventory"], queryFn: api.inventory });
   const [wh, setWh] = useState<string>("all");
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const warehouses = useMemo(
     () => Array.from(new Set((data ?? []).map((r) => r.warehouse))),
@@ -99,7 +101,11 @@ function InventoryPage() {
               {rows.map((r, i) => {
                 const critical = r.quantity < 10;
                 return (
-                  <tr key={i} className="hover:bg-muted/30">
+                  <tr
+                    key={i}
+                    className="hover:bg-muted/30 cursor-pointer"
+                    onClick={() => setDetailId(r.product_id)}
+                  >
                     <td className="px-5 py-3 font-mono text-xs">{r.sku}</td>
                     <td className="px-5 py-3 truncate max-w-[160px]">{r.name}</td>
                     <td className="px-5 py-3 text-muted-foreground hidden lg:table-cell">{r.warehouse}</td>
@@ -128,7 +134,11 @@ function InventoryPage() {
         {rows.map((r, i) => {
           const critical = r.quantity < 10;
           return (
-            <div key={i} className="rounded-lg border border-border bg-card p-4">
+            <div
+              key={i}
+              className="rounded-lg border border-border bg-card p-4 cursor-pointer hover:border-foreground/20 transition-colors"
+              onClick={() => setDetailId(r.product_id)}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-mono text-xs text-muted-foreground">{r.sku}</div>
@@ -150,6 +160,7 @@ function InventoryPage() {
           );
         })}
       </div>
+      <ProductDetailSheet productId={detailId} open={!!detailId} onOpenChange={(o) => { if (!o) setDetailId(null); }} />
     </div>
   );
 }

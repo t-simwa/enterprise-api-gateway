@@ -59,6 +59,18 @@ export interface Order {
   items_count: number;
   created_at: string;
 }
+export interface OrderItem {
+  product_id: string;
+  product_name: string;
+  sku: string;
+  quantity: number;
+  unit_price: number;
+}
+export interface OrderDetail extends Order {
+  customer_email: string;
+  items: OrderItem[];
+  timeline: { status: string; timestamp: string }[];
+}
 export interface LowStockItem {
   product_id: string;
   sku: string;
@@ -105,15 +117,46 @@ const PRODUCT_NAMES = [
   "Nimbus Wireless Hub", "Cipher Mechanical Keyboard", "Pulse Headset Pro", "Mantis Tripod",
 ];
 
-const PRODUCTS: Product[] = PRODUCT_NAMES.map((name, i) => ({
-  id: `p_${i + 1}`,
-  sku: `SKU-${(1000 + i).toString()}`,
-  name,
-  category: CATEGORIES[i % CATEGORIES.length],
-  unit_price: Math.round(2000 + Math.random() * 18000) / 100,
-  reorder_point: 20 + (i % 5) * 10,
-  is_active: true,
-}));
+function genProducts(): Product[] {
+  return PRODUCT_NAMES.map((name, i) => ({
+    id: `p_${i + 1}`,
+    sku: `SKU-${(1000 + i).toString()}`,
+    name,
+    category: CATEGORIES[i % CATEGORIES.length],
+    unit_price: Math.round(2000 + Math.random() * 18000) / 100,
+    reorder_point: 20 + (i % 5) * 10,
+    is_active: true,
+  }));
+}
+
+let PRODUCTS: Product[] = [];
+function loadProducts(): Product[] {
+  try {
+    const raw = localStorage.getItem("eag.products");
+    if (raw) return JSON.parse(raw);
+  } catch { /* noop */ }
+  return genProducts();
+}
+function persistProducts() {
+  localStorage.setItem("eag.products", JSON.stringify(PRODUCTS));
+}
+PRODUCTS = loadProducts();
+
+function genOrderItems(o: Order): OrderItem[] {
+  const count = o.id.startsWith("o_") ? parseInt(o.id.split("_")[1], 10) % 6 + 1 : o.items_count;
+  const seed = o.id.split("_").pop()?.charCodeAt(0) ?? 1;
+  return Array.from({ length: count }, (_, j) => {
+    const pi = (seed + j * 3) % PRODUCTS.length;
+    const p = PRODUCTS[pi];
+    return {
+      product_id: p.id,
+      product_name: p.name,
+      sku: p.sku,
+      quantity: 1 + (j % 4),
+      unit_price: p.unit_price,
+    };
+  });
+}
 
 function genOrders(n = 60): Order[] {
   const now = Date.now();
@@ -127,7 +170,25 @@ function genOrders(n = 60): Order[] {
     created_at: new Date(now - i * 3600_000 * (1 + Math.random())).toISOString(),
   }));
 }
-const ORDERS = genOrders();
+
+let ORDERS: Order[] = [];
+let ORDER_ITEMS: Record<string, OrderItem[]> = {};
+
+function loadOrders(): Order[] {
+  try {
+    const raw = localStorage.getItem("eag.orders");
+    if (raw) return JSON.parse(raw);
+  } catch { /* noop */ }
+  const orders = genOrders();
+  orders.forEach((o) => { ORDER_ITEMS[o.id] = genOrderItems(o); });
+  return orders;
+}
+
+function persistOrders() {
+  localStorage.setItem("eag.orders", JSON.stringify(ORDERS));
+}
+
+ORDERS = loadOrders();
 
 function genInventory(): InventoryRow[] {
   const warehouses = ["US-East", "US-West", "EU-Central", "APAC"];
@@ -199,22 +260,36 @@ function mockLowStock(): LowStockItem[] {
 
 function mockCreateOrder(input: OrderCreateInput): Order {
   const num = 10300 + Math.floor(Math.random() * 300);
-  return {
-    id: `o_new_${Date.now()}`,
+  const items = input.items.map((i) => {
+    const p = PRODUCTS.find((x) => x.id === i.product_id)!;
+    return {
+      product_id: i.product_id,
+      product_name: p?.name ?? "Unknown",
+      sku: p?.sku ?? "",
+      quantity: i.quantity,
+      unit_price: p?.unit_price ?? 0,
+    };
+  });
+  const total_amount = Math.round(items.reduce((s, i) => s + i.unit_price * i.quantity, 0) * 100) / 100;
+  const order: Order = {
+    id: `o_${Date.now()}`,
     order_number: `EAG-${num}`,
     customer_name: input.customer_name,
     status: "pending",
-    total_amount: 0,
+    total_amount,
     items_count: input.items.length,
     created_at: new Date().toISOString(),
   };
+  ORDERS.unshift(order);
+  ORDER_ITEMS[order.id] = items;
+  persistOrders();
+  return order;
 }
 
 function mockCreateProduct(input: ProductCreateInput): Product {
-  // Pick a category from the list or use the provided one
   const cat = input.category || CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-  return {
-    id: `p_new_${Date.now()}`,
+  const product: Product = {
+    id: `p_${Date.now()}`,
     sku: input.sku,
     name: input.name,
     category: cat,
@@ -222,9 +297,33 @@ function mockCreateProduct(input: ProductCreateInput): Product {
     reorder_point: input.reorder_point ?? 10,
     is_active: true,
   };
+  PRODUCTS.push(product);
+  persistProducts();
+  return product;
 }
 
-// Helper to unwrap paginated backend responses: { items, total, page, size, pages } -> items[]
+function mockOrderDetail(orderId: string): OrderDetail | undefined {
+  const o = ORDERS.find((x) => x.id === orderId);
+  if (!o) return undefined;
+  const items = ORDER_ITEMS[orderId];
+  if (!items) {
+    ORDER_ITEMS[orderId] = genOrderItems(o);
+  }
+  const timeline: { status: string; timestamp: string }[] = [
+    { status: "created", timestamp: o.created_at },
+    { status: o.status, timestamp: new Date().toISOString() },
+  ];
+  const customer_email = CUSTOMERS.find((c) => c === o.customer_name)
+    ? `${o.customer_name.toLowerCase().replace(/[^a-z]/g, "")}@example.com`
+    : "customer@example.com";
+  return {
+    ...o,
+    customer_email,
+    items: ORDER_ITEMS[orderId] ?? [],
+    timeline,
+  };
+}
+
 async function reqList<T>(path: string, init?: RequestInit): Promise<T[]> {
   const data = await req<{ items: T[] }>(path, init);
   return data.items;
@@ -233,18 +332,20 @@ async function reqList<T>(path: string, init?: RequestInit): Promise<T[]> {
 export const api = {
   dashboard: async (): Promise<DashboardData> =>
     isMock ? Promise.resolve(mockDashboard()) : req(apiPath("/orders/dashboard")),
-  revenueSeries: async (): Promise<{ date: string; revenue: number }[]> =>
-    isMock ? Promise.resolve(mockRevenueSeries()) : req(apiPath("/analytics/revenue?days=30")),
+  revenueSeries: async (days = 30): Promise<{ date: string; revenue: number }[]> =>
+    isMock ? Promise.resolve(mockRevenueSeries(days)) : req(apiPath(`/analytics/revenue?days=${days}`)),
   recentOrders: async (limit = 10): Promise<Order[]> =>
     isMock ? Promise.resolve(ORDERS.slice(0, limit)) : reqList<Order>(apiPath(`/orders?size=${limit}`)),
   allOrders: async (): Promise<Order[]> =>
-    isMock ? Promise.resolve(ORDERS) : reqList<Order>(apiPath("/orders?size=100")),
+    isMock ? Promise.resolve([...ORDERS]) : reqList<Order>(apiPath("/orders?size=100")),
   products: async (): Promise<Product[]> =>
-    isMock ? Promise.resolve(PRODUCTS) : reqList<Product>(apiPath("/products?size=100")),
+    isMock ? Promise.resolve([...PRODUCTS]) : reqList<Product>(apiPath("/products?size=100")),
   inventory: async (): Promise<InventoryRow[]> =>
-    isMock ? Promise.resolve(INVENTORY) : req<InventoryRow[]>(apiPath("/inventory")),
+    isMock ? Promise.resolve([...INVENTORY]) : req<InventoryRow[]>(apiPath("/inventory")),
   lowStock: async (): Promise<LowStockItem[]> =>
     isMock ? Promise.resolve(mockLowStock()) : req<LowStockItem[]>(apiPath("/inventory/low-stock")),
+  orderDetail: async (id: string): Promise<OrderDetail> =>
+    isMock ? Promise.resolve(mockOrderDetail(id)!) : req<OrderDetail>(apiPath(`/orders/${id}`)),
   createOrder: async (input: OrderCreateInput): Promise<Order> =>
     isMock ? Promise.resolve(mockCreateOrder(input)) : req<Order>(apiPath("/orders"), { method: "POST", body: JSON.stringify(input) }),
   createProduct: async (input: ProductCreateInput): Promise<Product> =>
